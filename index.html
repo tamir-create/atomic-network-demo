@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atomic Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;font-size:13px;background:#0f0f13;color:#e0e0e0;display:flex;min-height:100vh;}
+a{color:#7c6dfa;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;font-size:13px;}
+input,select,textarea{font-family:inherit;font-size:13px;background:#1e1e28;border:1px solid #2a2a35;color:#e0e0e0;border-radius:6px;padding:8px 12px;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:#7c6dfa;}
+textarea{resize:vertical;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#0f0f13;}
+::-webkit-scrollbar-thumb{background:#2a2a35;border-radius:3px;}
+
+/* Sidebar */
+.sidebar{width:220px;background:#18181f;border-right:1px solid #2a2a35;padding:20px 0;flex-shrink:0;display:flex;flex-direction:column;}
+.sidebar-logo{padding:0 20px 24px;font-size:16px;font-weight:700;color:#fff;letter-spacing:-0.3px;}
+.sidebar-logo span{color:#7c6dfa;}
+.sidebar-nav{flex:1;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:#888;font-size:13px;font-weight:500;transition:all .15s;}
+.sidebar-item:hover{color:#e0e0e0;background:#1e1e28;}
+.sidebar-item.active{color:#fff;background:#1e1e28;border-right:2px solid #7c6dfa;}
+.sidebar-item svg{width:18px;height:18px;flex-shrink:0;}
+.sidebar-item.new-site{color:#7c6dfa;margin-top:8px;}
+.sidebar-item.new-site:hover{background:rgba(124,109,250,.1);}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:28px 32px;}
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* Stat Cards */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:#18181f;border:1px solid #2a2a35;border-radius:10px;padding:20px;}
+.stat-card .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.stat-card .value{font-size:24px;font-weight:700;color:#fff;}
+.stat-card .value.orange{color:#f5a623;}
+.stat-card .value.red{color:#e94560;}
+.stat-card .value.green{color:#3ecf8e;}
+
+/* Table */
+.table-controls{display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+.table-controls input[type="text"]{width:240px;}
+.table-controls select{min-width:120px;}
+.data-table{width:100%;border-collapse:collapse;background:#18181f;border:1px solid #2a2a35;border-radius:10px;overflow:hidden;}
+.data-table th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;text-align:left;padding:12px 14px;border-bottom:1px solid #2a2a35;font-weight:600;white-space:nowrap;}
+.data-table td{padding:10px 14px;border-bottom:1px solid #1e1e28;white-space:nowrap;font-size:13px;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tbody tr{cursor:pointer;transition:background .12s;}
+.data-table tbody tr:hover{background:#1e1e28;}
+
+/* Status Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-new{background:rgba(136,136,136,.15);color:#888;}
+.badge-ready{background:rgba(96,165,250,.15);color:#60a5fa;}
+.badge-live{background:rgba(62,207,142,.15);color:#3ecf8e;}
+.badge-wordpress{background:rgba(245,166,35,.15);color:#f5a623;}
+.badge-preview{background:rgba(124,109,250,.15);color:#7c6dfa;}
+.badge-listicle{background:rgba(124,109,250,.15);color:#7c6dfa;}
+.badge-review{background:rgba(245,166,35,.15);color:#f5a623;}
+.badge-standard{background:rgba(136,136,136,.15);color:#aaa;}
+.badge-published{background:rgba(62,207,142,.15);color:#3ecf8e;}
+.badge-flagged{background:rgba(233,69,96,.15);color:#e94560;}
+.badge-running{background:rgba(62,207,142,.15);color:#3ecf8e;}
+
+/* Checkmark */
+.check{color:#3ecf8e;}
+
+/* Section headers */
+.section-header{font-size:16px;font-weight:600;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.section-header .count{font-size:12px;font-weight:500;padding:2px 8px;border-radius:10px;margin-left:8px;}
+
+/* Sync button */
+.sync-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(124,109,250,.1);border:1px solid rgba(124,109,250,.3);border-radius:6px;color:#7c6dfa;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
+.sync-btn:hover{background:rgba(124,109,250,.2);}
+.sync-btn svg{width:14px;height:14px;transition:transform .3s;}
+.sync-btn.spinning svg{animation:spin 1s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Two column layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px;}
+.col-card{background:#18181f;border:1px solid #2a2a35;border-radius:10px;padding:20px;}
+.col-card h3{font-size:14px;font-weight:600;color:#fff;margin-bottom:14px;}
+
+/* Review Queue Items */
+.review-item{padding:12px 0;border-bottom:1px solid #1e1e28;}
+.review-item:last-child{border-bottom:none;}
+.review-item .ri-title{font-weight:500;color:#fff;margin-bottom:4px;}
+.review-item .ri-meta{font-size:11px;color:#888;}
+
+/* Activity */
+.activity-item{padding:10px 0;border-bottom:1px solid #1e1e28;font-size:12px;}
+.activity-item:last-child{border-bottom:none;}
+.activity-item .time{color:#888;font-size:11px;margin-top:2px;}
+
+/* Review Queue Screen */
+.review-card{background:#18181f;border:1px solid #2a2a35;border-radius:10px;padding:24px;margin-bottom:16px;transition:all .3s;}
+.review-card.removing{opacity:0;transform:translateX(40px);margin-bottom:0;padding:0;overflow:hidden;max-height:0;}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.rc-title{font-size:15px;font-weight:600;color:#fff;}
+.rc-domain{font-size:12px;color:#888;margin-top:4px;}
+.rc-score{font-size:32px;font-weight:700;min-width:60px;text-align:center;}
+.rc-score.green{color:#3ecf8e;}
+.rc-score.orange{color:#f5a623;}
+.rc-score.red{color:#e94560;}
+.rc-bars{margin-bottom:12px;}
+.rc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.rc-bar-label{font-size:11px;color:#888;width:120px;flex-shrink:0;}
+.rc-bar-track{flex:1;height:6px;background:#1e1e28;border-radius:3px;overflow:hidden;}
+.rc-bar-fill{height:100%;border-radius:3px;}
+.rc-reason{font-size:12px;color:#aaa;font-style:italic;margin-bottom:16px;padding:10px;background:#1e1e28;border-radius:6px;}
+.rc-actions{display:flex;gap:10px;}
+.btn{padding:8px 18px;border-radius:6px;font-weight:500;font-size:13px;transition:all .15s;}
+.btn-ghost{background:transparent;border:1px solid #2a2a35;color:#e0e0e0;}
+.btn-ghost:hover{border-color:#888;}
+.btn-green{background:#3ecf8e;color:#000;}
+.btn-green:hover{background:#35b87c;}
+.btn-red{background:rgba(233,69,96,.15);color:#e94560;border:1px solid rgba(233,69,96,.3);}
+.btn-red:hover{background:rgba(233,69,96,.25);}
+.btn-purple{background:#7c6dfa;color:#fff;}
+.btn-purple:hover{background:#6b5ce6;}
+.btn-sm{padding:5px 12px;font-size:12px;}
+
+/* Side Panel */
+.side-panel{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:#18181f;border-left:1px solid #2a2a35;z-index:100;transition:right .25s;overflow-y:auto;padding:28px;}
+.side-panel.open{right:0;}
+.side-panel-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99;display:none;}
+.side-panel-overlay.open{display:block;}
+.sp-close{position:absolute;top:16px;right:16px;background:none;color:#888;font-size:20px;}
+.sp-close:hover{color:#fff;}
+.sp-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
+.sp-domain{font-size:13px;color:#888;margin-bottom:20px;}
+.sp-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e1e28;font-size:13px;}
+.sp-row .sp-label{color:#888;}
+.sp-row .sp-val{color:#e0e0e0;font-weight:500;}
+
+/* Wizard Modal */
+.wizard-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:center;justify-content:center;}
+.wizard-overlay.open{display:flex;}
+.wizard{background:#18181f;border:1px solid #2a2a35;border-radius:14px;width:680px;max-height:85vh;overflow-y:auto;padding:32px;}
+.wizard-steps{display:flex;gap:8px;margin-bottom:28px;}
+.wizard-step{flex:1;text-align:center;padding:8px 0;font-size:11px;font-weight:600;color:#888;border-bottom:2px solid #2a2a35;text-transform:uppercase;letter-spacing:.5px;}
+.wizard-step.active{color:#7c6dfa;border-bottom-color:#7c6dfa;}
+.wizard-step.done{color:#3ecf8e;border-bottom-color:#3ecf8e;}
+.wizard-body{min-height:280px;}
+.wiz-step{display:none;}
+.wiz-step.active{display:block;}
+.wizard-footer{display:flex;justify-content:space-between;margin-top:24px;padding-top:20px;border-top:1px solid #2a2a35;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* Theme cards */
+.theme-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.theme-card{background:#1e1e28;border:2px solid #2a2a35;border-radius:10px;padding:20px;cursor:pointer;transition:all .15s;text-align:center;}
+.theme-card.selected{border-color:#7c6dfa;}
+.theme-card .theme-preview{height:80px;border-radius:6px;margin-bottom:12px;}
+.theme-card h4{color:#fff;margin-bottom:4px;font-size:13px;}
+.theme-card p{font-size:11px;color:#888;}
+.theme-card .theme-check{display:none;color:#7c6dfa;font-size:12px;margin-bottom:6px;}
+.theme-card.selected .theme-check{display:block;}
+
+/* Day checkboxes */
+.day-checks{display:flex;gap:8px;flex-wrap:wrap;}
+.day-check{display:flex;align-items:center;gap:4px;font-size:12px;color:#e0e0e0;}
+.day-check input{accent-color:#7c6dfa;}
+
+/* Criteria checkboxes */
+.criteria-checks{display:flex;flex-wrap:wrap;gap:10px;}
+.criteria-check{display:flex;align-items:center;gap:4px;font-size:12px;}
+.criteria-check input{accent-color:#7c6dfa;}
+
+/* Slider visual */
+.slider-visual{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.slider-track{flex:1;height:8px;background:#1e1e28;border-radius:4px;position:relative;}
+.slider-fill{height:100%;width:75%;background:linear-gradient(90deg,#e94560,#f5a623,#3ecf8e);border-radius:4px;}
+.slider-val{font-size:16px;font-weight:700;color:#fff;}
+
+/* Staging Preview */
+.staging-browser{background:#1e1e28;border:1px solid #2a2a35;border-radius:10px;overflow:hidden;}
+.staging-bar{background:#0f0f13;padding:10px 16px;display:flex;align-items:center;gap:8px;}
+.staging-dots{display:flex;gap:5px;}
+.staging-dots span{width:10px;height:10px;border-radius:50%;}
+.staging-url{flex:1;background:#18181f;border:1px solid #2a2a35;border-radius:4px;padding:4px 10px;font-size:11px;color:#888;}
+.staging-content{padding:24px;}
+.staging-content .fake-header{height:40px;background:#2a2a35;border-radius:6px;margin-bottom:16px;}
+.staging-content .fake-title{height:24px;width:60%;background:#2a2a35;border-radius:4px;margin-bottom:12px;}
+.staging-content .fake-text{height:10px;background:#1e1e28;border-radius:2px;margin-bottom:8px;}
+.staging-content .fake-ad{height:60px;background:rgba(124,109,250,.1);border:1px dashed #7c6dfa;border-radius:6px;margin-top:16px;display:flex;align-items:center;justify-content:center;color:#7c6dfa;font-size:11px;}
+.staging-success{display:flex;align-items:center;gap:8px;margin-top:16px;color:#3ecf8e;font-weight:500;}
+
+/* Loading animation */
+.build-loading{text-align:center;padding:40px 0;}
+.build-spinner{width:48px;height:48px;border:3px solid #2a2a35;border-top-color:#7c6dfa;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px;}
+.build-log{background:#0f0f13;border:1px solid #2a2a35;border-radius:8px;padding:14px;margin-top:20px;font-family:'Courier New',monospace;font-size:11px;color:#888;text-align:left;max-height:140px;overflow:hidden;}
+.build-log .log-line{opacity:0;animation:fadeInLine .3s forwards;}
+@keyframes fadeInLine{to{opacity:1;}}
+.staging-done{display:none;text-align:center;}
+.staging-done.visible{display:block;}
+.staging-link{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(124,109,250,.1);border:1px solid rgba(124,109,250,.3);border-radius:8px;color:#7c6dfa;font-size:13px;font-weight:500;margin-top:12px;text-decoration:none;cursor:pointer;}
+.staging-link:hover{background:rgba(124,109,250,.2);}
+.staging-note{margin-top:16px;padding:12px;background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.2);border-radius:8px;color:#3ecf8e;font-size:12px;}
+
+/* Network cards */
+.network-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.network-card{background:#1e1e28;border:2px solid #2a2a35;border-radius:10px;padding:16px;transition:all .15s;}
+.network-card.on{border-color:#7c6dfa;}
+.network-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.network-card-header h4{font-size:13px;color:#fff;}
+.toggle{width:36px;height:20px;background:#2a2a35;border-radius:10px;position:relative;cursor:pointer;transition:all .15s;}
+.toggle.on{background:#7c6dfa;}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:all .15s;}
+.toggle.on::after{left:18px;}
+.placement-checks{display:none;flex-direction:column;gap:6px;font-size:12px;}
+.network-card.on .placement-checks{display:flex;}
+.placement-check{display:flex;align-items:center;gap:6px;}
+.placement-check input{accent-color:#7c6dfa;}
+
+/* Code block */
+.code-block{background:#0f0f13;border:1px solid #2a2a35;border-radius:6px;padding:12px;font-family:'Courier New',monospace;font-size:11px;color:#888;white-space:pre;overflow-x:auto;}
+
+/* Confirm screen */
+.confirm-list{list-style:none;}
+.confirm-list li{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;}
+.confirm-list li svg{color:#3ecf8e;width:20px;height:20px;flex-shrink:0;}
+
+/* Site Detail */
+.detail-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+.detail-info{display:flex;align-items:center;gap:16px;}
+.detail-info h1{font-size:20px;font-weight:700;color:#fff;}
+.detail-meta{display:flex;gap:16px;font-size:12px;color:#888;margin-top:4px;}
+.detail-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid #2a2a35;}
+.detail-tab{padding:10px 20px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.detail-tab:hover{color:#e0e0e0;}
+.detail-tab.active{color:#fff;border-bottom-color:#7c6dfa;}
+.detail-tab-content{display:none;}
+.detail-tab-content.active{display:block;}
+
+/* AI Agent tab */
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.agent-card{background:#1e1e28;border:1px solid #2a2a35;border-radius:10px;padding:20px;}
+.agent-card h4{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.agent-stat{font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;}
+.agent-sub{font-size:12px;color:#888;}
+.scoring-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.scoring-tag{padding:4px 10px;background:rgba(124,109,250,.1);color:#7c6dfa;border-radius:4px;font-size:11px;}
+
+/* Monetization tab */
+.mon-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.mon-item{background:#1e1e28;border:1px solid #2a2a35;border-radius:8px;padding:14px;}
+.mon-item .mon-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.mon-item .mon-val{font-size:14px;font-weight:600;color:#fff;}
+
+/* Tooltip */
+.wp-tooltip{position:fixed;background:#2a2a35;color:#f5a623;padding:8px 14px;border-radius:6px;font-size:12px;z-index:50;pointer-events:none;display:none;}
+
+/* RSS aggregator link */
+.rss-link-card{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#1e1e28;border:1px solid #2a2a35;border-radius:8px;cursor:pointer;transition:all .15s;}
+.rss-link-card:hover{border-color:#7c6dfa;background:rgba(124,109,250,.05);}
+.rss-link-card svg{width:20px;height:20px;color:#7c6dfa;flex-shrink:0;}
+.rss-link-card .rss-link-text{font-size:13px;color:#fff;font-weight:500;}
+.rss-link-card .rss-link-sub{font-size:11px;color:#888;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">Atomic <span>Network</span></div>
+  <div class="sidebar-nav">
+    <div class="sidebar-item active" data-screen="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="sidebar-item" data-screen="sites">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Sites
+    </div>
+    <div class="sidebar-item" data-screen="review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Review Queue
+    </div>
+    <div class="sidebar-item new-site" id="sidebar-new-site">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      + New Site
+    </div>
+  </div>
+</div>
+
+<!-- Side Panel Overlay -->
+<div class="side-panel-overlay" id="sp-overlay"></div>
+<div class="side-panel" id="side-panel">
+  <button class="sp-close" id="sp-close">&times;</button>
+  <div id="sp-content"></div>
+</div>
+
+<!-- WordPress Tooltip -->
+<div class="wp-tooltip" id="wp-tooltip">Migration coming soon</div>
+
+<!-- Wizard Overlay -->
+<div class="wizard-overlay" id="wizard-overlay">
+  <div class="wizard" id="wizard"></div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+  <!-- Dashboard Screen -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="section-header" style="margin-bottom:20px;">Dashboard</div>
+    <div class="stat-cards">
+      <div class="stat-card"><div class="label">Total Sites</div><div class="value">16</div></div>
+      <div class="stat-card"><div class="label">Articles This Week</div><div class="value green">38</div></div>
+      <div class="stat-card"><div class="label">Pending Review</div><div class="value orange">4</div></div>
+      <div class="stat-card"><div class="label">Failed Builds</div><div class="value red">1</div></div>
+    </div>
+
+    <div class="section-header">Recent Sites</div>
+    <table class="data-table" id="dashboard-table">
+      <thead><tr>
+        <th>Website</th><th>Company</th><th>Vertical</th><th>Status</th><th>Site ID</th><th>Last Updated</th>
+      </tr></thead>
+      <tbody id="dashboard-tbody"></tbody>
+    </table>
+
+    <div class="two-col">
+      <div class="col-card">
+        <h3>Review Queue</h3>
+        <div id="dash-review-list"></div>
+      </div>
+      <div class="col-card">
+        <h3>Recent Activity</h3>
+        <div class="activity-item">AI Agent published article on muvizz.com<div class="time">2 hours ago</div></div>
+        <div class="activity-item">decoratingnerds.com monetization updated<div class="time">5 hours ago</div></div>
+        <div class="activity-item">travelnights.com site built to staging<div class="time">1 day ago</div></div>
+        <div class="activity-item">useminds.com article flagged for review<div class="time">1 day ago</div></div>
+        <div class="activity-item">popsnap.com Taboola activated<div class="time">2 days ago</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sites Screen -->
+  <div class="screen" id="screen-sites">
+    <div class="section-header">
+      Sites
+      <button class="sync-btn" id="domain-sync-btn" onclick="syncDomains()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Sync Domains
+      </button>
+    </div>
+    <div class="table-controls">
+      <input type="text" id="search-input" placeholder="Search domains...">
+      <select id="filter-company"><option value="">All Companies</option><option value="ATL">ATL</option><option value="NGC">NGC</option></select>
+      <select id="filter-vertical"><option value="">All Verticals</option><option value="Lifestyle">Lifestyle</option><option value="Travel">Travel</option><option value="Animals">Animals</option><option value="Science">Science</option><option value="Entertainment">Entertainment</option><option value="Conspiracy">Conspiracy</option><option value="Other">Other</option><option value="News">News</option><option value="Food & Drink">Food & Drink</option></select>
+      <select id="filter-status"><option value="">All Statuses</option><option value="New">New</option><option value="Preview">Preview</option><option value="Ready">Ready</option><option value="Live">Live</option><option value="WordPress">WordPress</option></select>
+    </div>
+    <table class="data-table" id="sites-table">
+      <thead><tr>
+        <th>Website</th><th>Company</th><th>Vertical</th><th>Status</th><th>Site ID</th><th>Exclusivity</th><th>OB epid</th><th>GA Info</th><th>Last Updated</th><th>CF APO</th><th>Fixed Ad</th>
+      </tr></thead>
+      <tbody id="sites-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Review Queue Screen -->
+  <div class="screen" id="screen-review">
+    <div class="section-header">Review Queue <span class="count badge-flagged" id="review-count">4 pending</span></div>
+    <div id="review-cards"></div>
+  </div>
+
+  <!-- Site Detail Screen -->
+  <div class="screen" id="screen-detail">
+    <div style="margin-bottom:16px;"><button class="btn btn-ghost btn-sm" id="detail-back">&larr; Back to Sites</button></div>
+    <div class="detail-top">
+      <div class="detail-info">
+        <div>
+          <h1 id="detail-name"></h1>
+          <div class="detail-meta">
+            <span id="detail-domain"></span>
+            <span id="detail-badge"></span>
+            <span id="detail-company"></span>
+            <span id="detail-vertical"></span>
+          </div>
+        </div>
+      </div>
+      <a class="btn btn-purple btn-sm" id="detail-open" target="_blank">Open Live Site ↗</a>
+    </div>
+    <div class="detail-tabs">
+      <div class="detail-tab active" data-tab="content">Content</div>
+      <div class="detail-tab" data-tab="agent">AI Agent</div>
+      <div class="detail-tab" data-tab="monetization">Monetization</div>
+    </div>
+
+    <!-- Content Tab -->
+    <div class="detail-tab-content active" id="tab-content">
+      <table class="data-table">
+        <thead><tr><th>Title</th><th>Type</th><th>AI Score</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>10 Must-Watch Thrillers on Netflix in 2026</td><td><span class="badge badge-listicle">listicle</span></td><td style="color:#3ecf8e;font-weight:600;">91</td><td><span class="badge badge-published">Published</span></td><td>Mar 15</td><td><button class="btn btn-ghost btn-sm">Preview</button></td></tr>
+          <tr><td>Is Disney+ Worth It in 2026?</td><td><span class="badge badge-review">review</span></td><td style="color:#3ecf8e;font-weight:600;">85</td><td><span class="badge badge-published">Published</span></td><td>Mar 13</td><td><button class="btn btn-ghost btn-sm">Preview</button></td></tr>
+          <tr><td>Best Horror Movies on Hulu Right Now</td><td><span class="badge badge-listicle">listicle</span></td><td style="color:#f5a623;font-weight:600;">78</td><td><span class="badge badge-published">Published</span></td><td>Mar 12</td><td><button class="btn btn-ghost btn-sm">Preview</button></td></tr>
+          <tr><td>Streaming Wars: Who's Winning in 2026?</td><td><span class="badge badge-standard">standard</span></td><td style="color:#e94560;font-weight:600;">61</td><td><span class="badge badge-flagged">Flagged</span></td><td>Mar 11</td><td><button class="btn btn-ghost btn-sm">Preview</button></td></tr>
+          <tr><td>Top 10 Documentaries You Haven't Seen</td><td><span class="badge badge-listicle">listicle</span></td><td style="color:#3ecf8e;font-weight:600;">88</td><td><span class="badge badge-published">Published</span></td><td>Mar 10</td><td><button class="btn btn-ghost btn-sm">Preview</button></td></tr>
+          <tr><td>Why Netflix is Losing Subscribers</td><td><span class="badge badge-standard">standard</span></td><td style="color:#e94560;font-weight:600;">54</td><td><span class="badge badge-flagged">Flagged</span></td><td>Mar 9</td><td><button class="btn btn-ghost btn-sm">Preview</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- AI Agent Tab -->
+    <div class="detail-tab-content" id="tab-agent">
+      <div class="agent-grid">
+        <div class="agent-card">
+          <h4>Status</h4>
+          <div class="agent-stat"><span class="badge badge-running">● Running</span></div>
+          <div class="agent-sub" style="margin-top:8px;">Model: Claude 3.5 Sonnet</div>
+        </div>
+        <div class="agent-card">
+          <h4>RSS Feed</h4>
+          <div style="font-size:13px;color:#7c6dfa;word-break:break-all;">https://rss.muvizz-source.com/feed</div>
+        </div>
+        <div class="agent-card" style="grid-column:span 2;">
+          <h4>Approval Threshold</h4>
+          <div class="slider-visual">
+            <div class="slider-track"><div class="slider-fill"></div></div>
+            <div class="slider-val">75/100</div>
+          </div>
+        </div>
+        <div class="agent-card" style="grid-column:span 2;">
+          <h4>Scoring Criteria</h4>
+          <div class="scoring-tags">
+            <span class="scoring-tag">SEO Quality</span>
+            <span class="scoring-tag">Tone Match</span>
+            <span class="scoring-tag">Content Length</span>
+            <span class="scoring-tag">Factual Accuracy</span>
+            <span class="scoring-tag">Keyword Relevance</span>
+          </div>
+        </div>
+        <div class="agent-card">
+          <h4>This Week</h4>
+          <div class="agent-stat">3 <span style="font-size:13px;font-weight:400;color:#888;">generated</span></div>
+          <div class="agent-sub">2 auto-published · 1 flagged</div>
+        </div>
+        <div class="agent-card">
+          <h4>Schedule</h4>
+          <div class="agent-sub">Last run: <strong style="color:#fff;">2h ago</strong></div>
+          <div class="agent-sub" style="margin-top:4px;">Next run: <strong style="color:#fff;">in 4h</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monetization Tab -->
+    <div class="detail-tab-content" id="tab-monetization">
+      <div class="mon-grid" id="detail-mon-grid"></div>
+      <div style="margin-top:20px;">
+        <button class="btn btn-purple" id="edit-monetization-btn">Edit Monetization</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== DATA =====
+const sites = [
+  {domain:"decoratingmom.com",company:"ATL",vertical:"Lifestyle",status:"Live",siteId:"1952252148",exclusivity:"Taboola",obEpid:"",ga:"G-C5W98CQV7E",updated:"4 months ago",cfApo:false,fixedAd:true},
+  {domain:"travelgeekexplorer.com",company:"ATL",vertical:"Travel",status:"Live",siteId:"1952252195",exclusivity:"Taboola",obEpid:"",ga:"G-MLPWZY0MZR",updated:"4 months ago",cfApo:false,fixedAd:false},
+  {domain:"dogpotato.com",company:"ATL",vertical:"Animals",status:"Live",siteId:"1952252210",exclusivity:"Taboola",obEpid:"",ga:"G-N44RK1FFEG",updated:"4 months ago",cfApo:false,fixedAd:true},
+  {domain:"useminds.com",company:"NGC",vertical:"Science",status:"Live",siteId:"1949516660",exclusivity:"",obEpid:"3",ga:"",updated:"5 days ago",cfApo:false,fixedAd:true},
+  {domain:"travelnights.com",company:"ATL",vertical:"Travel",status:"Ready",siteId:"5086288751",exclusivity:"",obEpid:"4",ga:"G-MLPWZY0MZR",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"wtpop.com",company:"NGC",vertical:"Entertainment",status:"Live",siteId:"1949516256",exclusivity:"OB-NGC",obEpid:"5",ga:"",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"muvizz.com",company:"NGC",vertical:"Entertainment",status:"Live",siteId:"1949500748",exclusivity:"OB-NGC",obEpid:"2",ga:"G-328395426",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"stroylab.com",company:"NGC",vertical:"Conspiracy",status:"Ready",siteId:"1949505450",exclusivity:"",obEpid:"6",ga:"",updated:"4 months ago",cfApo:false,fixedAd:false},
+  {domain:"dazz.com",company:"",vertical:"Other",status:"New",siteId:"1949505620",exclusivity:"",obEpid:"",ga:"",updated:"10 months ago",cfApo:false,fixedAd:false},
+  {domain:"wsinsider.com",company:"",vertical:"News",status:"WordPress",siteId:"1949511309",exclusivity:"",obEpid:"",ga:"",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"popsnap.com",company:"ATL",vertical:"Entertainment",status:"Live",siteId:"1949513839",exclusivity:"OB-ATL",obEpid:"1",ga:"G-328395426",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"mindmedications.com",company:"ATL",vertical:"Lifestyle",status:"Live",siteId:"1949514890",exclusivity:"OB-ATL",obEpid:"mindfullines",ga:"G-S6RKKP7JRV",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"coffeeactually.com",company:"ATL",vertical:"Food & Drink",status:"WordPress",siteId:"1952252133",exclusivity:"",obEpid:"R&D",ga:"",updated:"4 months ago",cfApo:false,fixedAd:false},
+  {domain:"buzzsoaps.com",company:"ATL",vertical:"Entertainment",status:"Live",siteId:"1949502224",exclusivity:"OB-ATL",obEpid:"",ga:"G-ZB5XGLGHR",updated:"5 days ago",cfApo:false,fixedAd:false},
+  {domain:"babyparenttrends.com",company:"ATL",vertical:"Lifestyle",status:"Ready",siteId:"1952252132",exclusivity:"OB-ATL",obEpid:"",ga:"G-7RPBZEPLKX",updated:"5 months ago",cfApo:false,fixedAd:false},
+  {domain:"decoratingnerds.com",company:"ATL",vertical:"Lifestyle",status:"Live",siteId:"1952252140",exclusivity:"",obEpid:"",ga:"G-R34WBLSQXE",updated:"2 days ago",cfApo:false,fixedAd:false},
+];
+
+// New domains that sync adds
+const syncDomains_pool = [
+  {domain:"freshbytesdaily.com",company:"",vertical:"Food & Drink",status:"New",siteId:"1949520001",exclusivity:"",obEpid:"",ga:"",updated:"just now",cfApo:false,fixedAd:false},
+  {domain:"urbanpulsenews.com",company:"",vertical:"News",status:"New",siteId:"1949520002",exclusivity:"",obEpid:"",ga:"",updated:"just now",cfApo:false,fixedAd:false},
+  {domain:"petpawradise.com",company:"",vertical:"Animals",status:"New",siteId:"1949520003",exclusivity:"",obEpid:"",ga:"",updated:"just now",cfApo:false,fixedAd:false},
+];
+let syncIndex = 0;
+
+const reviewItems = [
+  {title:"Streaming Wars: Who's Winning in 2026?",domain:"muvizz.com",type:"standard",score:61,reason:"Weak SEO structure and low keyword relevance.",bars:{seo:40,tone:72,length:65,factual:78,keyword:35}},
+  {title:"Budget Hotels in Southeast Asia 2026",domain:"travelnights.com",type:"listicle",score:64,reason:"Tone does not match site brief.",bars:{seo:70,tone:30,length:75,factual:80,keyword:60}},
+  {title:"Skincare Routines That Actually Work",domain:"babyparenttrends.com",type:"standard",score:58,reason:"Article too short, factual accuracy concerns.",bars:{seo:55,tone:65,length:25,factual:40,keyword:70}},
+  {title:"7 Morning Habits of Healthy People",domain:"mindmedications.com",type:"listicle",score:67,reason:"Generic content, low keyword relevance.",bars:{seo:72,tone:70,length:78,factual:75,keyword:32}},
+];
+
+// ===== HELPERS =====
+function badgeClass(status){return'badge-'+status.toLowerCase();}
+function scoreColor(s){return s>=80?'#3ecf8e':s>=70?'#f5a623':'#e94560';}
+function scoreClass(s){return s>=80?'green':s>=70?'orange':'red';}
+function barColor(v){return v>=70?'#3ecf8e':v>=50?'#f5a623':'#e94560';}
+
+function renderSiteRow(s,short){
+  const cols = short
+    ? `<td>${s.domain}</td><td>${s.company}</td><td>${s.vertical}</td><td><span class="badge ${badgeClass(s.status)}">${s.status}</span></td><td style="color:#888;font-size:12px;">${s.siteId}</td><td style="color:#888;font-size:12px;">${s.updated}</td>`
+    : `<td>${s.domain}</td><td>${s.company}</td><td>${s.vertical}</td><td><span class="badge ${badgeClass(s.status)}">${s.status}</span></td><td style="color:#888;font-size:12px;">${s.siteId}</td><td>${s.exclusivity}</td><td>${s.obEpid}</td><td style="color:#888;font-size:12px;">${s.ga}</td><td style="color:#888;font-size:12px;">${s.updated}</td><td>${s.cfApo?'<span class="check">✓</span>':''}</td><td>${s.fixedAd?'<span class="check">✓</span>':''}</td>`;
+  return `<tr data-domain="${s.domain}">${cols}</tr>`;
+}
+
+// ===== DOMAIN SYNC =====
+function syncDomains(){
+  const btn = document.getElementById('domain-sync-btn');
+  if(btn.classList.contains('spinning')) return;
+  btn.classList.add('spinning');
+  setTimeout(()=>{
+    btn.classList.remove('spinning');
+    if(syncIndex < syncDomains_pool.length){
+      const newDomain = syncDomains_pool[syncIndex];
+      // Check not already added
+      if(!sites.find(s=>s.domain===newDomain.domain)){
+        sites.push(newDomain);
+      }
+      syncIndex++;
+    }
+    renderDashboardTable();
+    renderSitesTable();
+  },1200);
+}
+
+// ===== RENDER TABLES =====
+function renderDashboardTable(){
+  document.getElementById('dashboard-tbody').innerHTML = sites.slice(0,5).map(s=>renderSiteRow(s,true)).join('');
+}
+
+function renderSitesTable(){
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const company = document.getElementById('filter-company').value;
+  const vertical = document.getElementById('filter-vertical').value;
+  const status = document.getElementById('filter-status').value;
+  const filtered = sites.filter(s=>{
+    if(search && !s.domain.toLowerCase().includes(search)) return false;
+    if(company && s.company!==company) return false;
+    if(vertical && s.vertical!==vertical) return false;
+    if(status && s.status!==status) return false;
+    return true;
+  });
+  document.getElementById('sites-tbody').innerHTML = filtered.map(s=>renderSiteRow(s,false)).join('');
+}
+
+function renderDashReview(){
+  document.getElementById('dash-review-list').innerHTML = reviewItems.slice(0,4).map(r=>
+    `<div class="review-item"><div class="ri-title">${r.title}</div><div class="ri-meta">${r.domain} · Score: <span style="color:${scoreColor(r.score)}">${r.score}</span></div></div>`
+  ).join('');
+}
+
+function renderReviewCards(){
+  const container = document.getElementById('review-cards');
+  container.innerHTML = reviewItems.map((r,i)=>{
+    const barsHtml = Object.entries({seo:'SEO Quality',tone:'Tone Match',length:'Content Length',factual:'Factual Accuracy',keyword:'Keyword Relevance'}).map(([k,label])=>
+      `<div class="rc-bar-row"><span class="rc-bar-label">${label}</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:${r.bars[k]}%;background:${barColor(r.bars[k])}"></div></div></div>`
+    ).join('');
+    return `<div class="review-card" id="rc-${i}">
+      <div class="rc-top">
+        <div><div class="rc-title">${r.title}</div><div class="rc-domain">${r.domain} · <span class="badge badge-${r.type}">${r.type}</span></div></div>
+        <div class="rc-score ${scoreClass(r.score)}">${r.score}</div>
+      </div>
+      <div class="rc-bars">${barsHtml}</div>
+      <div class="rc-reason">"${r.reason}"</div>
+      <div class="rc-actions">
+        <button class="btn btn-ghost btn-sm">Preview</button>
+        <button class="btn btn-green btn-sm" onclick="removeReviewCard(${i})">Approve</button>
+        <button class="btn btn-red btn-sm" onclick="removeReviewCard(${i})">Reject + Regenerate</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let reviewPending = 4;
+function removeReviewCard(i){
+  const card = document.getElementById('rc-'+i);
+  if(!card) return;
+  card.classList.add('removing');
+  reviewPending--;
+  document.getElementById('review-count').textContent = reviewPending+' pending';
+  setTimeout(()=>card.remove(),350);
+}
+
+// ===== NAVIGATION =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`.sidebar-item[data-screen="${id}"]`)?.classList.add('active');
+}
+
+document.querySelectorAll('.sidebar-item[data-screen]').forEach(item=>{
+  item.addEventListener('click',()=>showScreen(item.dataset.screen));
+});
+
+// ===== ROW CLICK HANDLING =====
+document.addEventListener('click',function(e){
+  const row = e.target.closest('tr[data-domain]');
+  if(!row) return;
+  const domain = row.dataset.domain;
+  const site = sites.find(s=>s.domain===domain);
+  if(!site) return;
+
+  if(site.status==='New'){
+    openCreationWizard(site);
+  } else if(site.status==='Preview'){
+    openCreationWizard(site, 4); // jump to staging step
+  } else if(site.status==='Ready'){
+    openSidePanel(site);
+  } else if(site.status==='Live'){
+    openSiteDetail(site);
+  } else if(site.status==='WordPress'){
+    const tooltip = document.getElementById('wp-tooltip');
+    const rect = row.getBoundingClientRect();
+    tooltip.style.left = rect.left+100+'px';
+    tooltip.style.top = rect.top-36+'px';
+    tooltip.style.display = 'block';
+    setTimeout(()=>tooltip.style.display='none',1800);
+  }
+});
+
+// ===== SIDE PANEL (Ready sites) =====
+function openSidePanel(site){
+  document.getElementById('sp-overlay').classList.add('open');
+  document.getElementById('side-panel').classList.add('open');
+  document.getElementById('sp-content').innerHTML = `
+    <div class="sp-title">${site.domain}</div>
+    <div class="sp-domain" style="margin-bottom:20px;"><span class="badge badge-ready">Ready</span></div>
+    <div class="sp-row"><span class="sp-label">Company</span><span class="sp-val">${site.company||'—'}</span></div>
+    <div class="sp-row"><span class="sp-label">Vertical</span><span class="sp-val">${site.vertical}</span></div>
+    <div class="sp-row"><span class="sp-label">Site ID</span><span class="sp-val">${site.siteId}</span></div>
+    <div class="sp-row"><span class="sp-label">Exclusivity</span><span class="sp-val">${site.exclusivity||'None'}</span></div>
+    <div class="sp-row"><span class="sp-label">OB epid</span><span class="sp-val">${site.obEpid||'—'}</span></div>
+    <div class="sp-row"><span class="sp-label">GA Info</span><span class="sp-val">${site.ga||'—'}</span></div>
+    <div class="sp-row"><span class="sp-label">Last Updated</span><span class="sp-val">${site.updated}</span></div>
+    <div style="margin-top:24px;"><button class="btn btn-purple" onclick="closeSidePanel();openMonetizationWizard(sites.find(s=>s.domain==='${site.domain}'));">Start Monetization</button></div>
+  `;
+}
+function closeSidePanel(){
+  document.getElementById('sp-overlay').classList.remove('open');
+  document.getElementById('side-panel').classList.remove('open');
+}
+document.getElementById('sp-overlay').addEventListener('click',closeSidePanel);
+document.getElementById('sp-close').addEventListener('click',closeSidePanel);
+
+// ===== SITE DETAIL (Live sites) =====
+function openSiteDetail(site){
+  showScreen('detail');
+  document.getElementById('detail-name').textContent = site.domain.replace('.com','').replace('.','');
+  document.getElementById('detail-domain').textContent = site.domain;
+  document.getElementById('detail-badge').innerHTML = `<span class="badge badge-live">Live</span>`;
+  document.getElementById('detail-company').textContent = site.company;
+  document.getElementById('detail-vertical').textContent = site.vertical;
+  document.getElementById('detail-open').href = 'https://'+site.domain;
+
+  // Reset tabs
+  document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.detail-tab[data-tab="content"]').classList.add('active');
+  document.querySelectorAll('.detail-tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-content').classList.add('active');
+
+  // Monetization tab data
+  document.getElementById('detail-mon-grid').innerHTML = `
+    <div class="mon-item"><div class="mon-label">Site ID</div><div class="mon-val">${site.siteId}</div></div>
+    <div class="mon-item"><div class="mon-label">Exclusivity</div><div class="mon-val">${site.exclusivity||'None'}</div></div>
+    <div class="mon-item"><div class="mon-label">OB epid</div><div class="mon-val">${site.obEpid||'—'}</div></div>
+    <div class="mon-item"><div class="mon-label">GA Info</div><div class="mon-val">${site.ga||'—'}</div></div>
+    <div class="mon-item"><div class="mon-label">Cloudflare APO</div><div class="mon-val">${site.cfApo?'Enabled':'Disabled'}</div></div>
+    <div class="mon-item"><div class="mon-label">Fixed Ad Insert</div><div class="mon-val">${site.fixedAd?'Enabled':'Disabled'}</div></div>
+  `;
+
+  window._detailSite = site;
+}
+
+document.getElementById('detail-back').addEventListener('click',()=>showScreen('sites'));
+document.getElementById('edit-monetization-btn').addEventListener('click',()=>{
+  if(window._detailSite) openMonetizationWizard(window._detailSite);
+});
+
+// Detail tabs
+document.querySelectorAll('.detail-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.detail-tab-content').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== WIZARDS =====
+let wizardCurrentStep = 0;
+let wizardSteps = [];
+let wizardStepNames = [];
+let wizardSite = null;
+let wizardType = '';
+
+function openWizard(){
+  document.getElementById('wizard-overlay').classList.add('open');
+  renderWizard();
+}
+function closeWizard(){
+  document.getElementById('wizard-overlay').classList.remove('open');
+}
+document.getElementById('wizard-overlay').addEventListener('click',function(e){
+  if(e.target===this) closeWizard();
+});
+
+function renderWizard(){
+  const stepsHtml = wizardStepNames.map((name,i)=>{
+    let cls = i===wizardCurrentStep?'active':i<wizardCurrentStep?'done':'';
+    return `<div class="wizard-step ${cls}">${name}</div>`;
+  }).join('');
+
+  const isLast = wizardCurrentStep===wizardSteps.length-1;
+  const isFirst = wizardCurrentStep===0;
+  const stepContent = wizardSteps[wizardCurrentStep]();
+
+  // Check if this step has custom footer (like staging or go live)
+  const hasCustomFooter = (wizardType==='creation' && (wizardCurrentStep===4 || wizardCurrentStep===5));
+
+  document.getElementById('wizard').innerHTML = `
+    <div class="wizard-steps">${stepsHtml}</div>
+    <div class="wizard-body"><div class="wiz-step active">${stepContent}</div></div>
+    ${hasCustomFooter?'':`<div class="wizard-footer">
+      <button class="btn btn-ghost" onclick="${isFirst?'closeWizard()':'wizPrev()'}">${isFirst?'Cancel':'← Back'}</button>
+      ${isLast?'':
+        `<button class="btn btn-purple" onclick="wizNext()">Next →</button>`
+      }
+    </div>`}
+  `;
+
+  // If staging step, trigger build animation
+  if(wizardType==='creation' && wizardCurrentStep===4){
+    startBuildAnimation();
+  }
+}
+
+function wizNext(){wizardCurrentStep++;renderWizard();}
+function wizPrev(){wizardCurrentStep--;renderWizard();}
+
+// ===== FLOW 1 — SITE CREATION =====
+function openCreationWizard(site, startStep){
+  wizardSite = site;
+  wizardType = 'creation';
+  wizardStepNames = ['Identity','Theme','Content Brief','AI Agent','Preview','Go Live'];
+  wizardSteps = [creationStep1,creationStep2,creationStep3,creationStep4,creationStep5,creationStep6];
+  wizardCurrentStep = startStep || 0;
+  openWizard();
+}
+
+document.getElementById('sidebar-new-site').addEventListener('click',()=>{
+  // For new site wizard, don't pre-select a domain — user picks from dropdown
+  wizardSite = {domain:'',company:'',vertical:'Other',status:'New',siteId:'',exclusivity:'',obEpid:'',ga:'',updated:'just now',cfApo:false,fixedAd:false};
+  openCreationWizard(wizardSite);
+});
+
+function getNewDomains(){
+  return sites.filter(s=>s.status==='New');
+}
+
+function creationStep1(){
+  const newDomains = getNewDomains();
+  const domainOptions = newDomains.map(s=>`<option value="${s.domain}" ${s.domain===wizardSite.domain?'selected':''}>${s.domain}</option>`).join('');
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Site Identity</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Domain</label>
+        <select id="wiz-domain-select" onchange="wizSelectDomain(this.value)">
+          <option value="">Select a domain...</option>
+          ${domainOptions}
+        </select>
+      </div>
+      <div class="form-group"><label>Site Name</label><input type="text" placeholder="My Awesome Site"></div>
+    </div>
+    <div class="form-group"><label>Tagline</label><input type="text" placeholder="Your site's tagline"></div>
+    <div class="form-group"><label>Audience</label><textarea rows="2" placeholder="Describe your target audience (e.g. Women 25-45 interested in home decor and DIY projects)"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Company</label><select><option value="">Select...</option><option>ATL</option><option>NGC</option></select></div>
+      <div class="form-group"><label>Vertical</label><select><option value="">Select...</option><option>Lifestyle</option><option>Travel</option><option>Animals</option><option>Science</option><option>Entertainment</option><option>Conspiracy</option><option>Other</option><option>News</option><option>Food & Drink</option></select></div>
+    </div>
+  `;
+}
+
+function wizSelectDomain(domain){
+  const site = sites.find(s=>s.domain===domain);
+  if(site) wizardSite = site;
+}
+
+function creationStep2(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Choose Theme</h3>
+    <div class="theme-cards">
+      <div class="theme-card selected" onclick="selectTheme(this)">
+        <div class="theme-check">✓ Selected</div>
+        <div class="theme-preview" style="background:linear-gradient(135deg,#7c6dfa 0%,#3ecf8e 100%);"></div>
+        <h4>Modern</h4>
+        <p>Clean, minimal design with bold typography</p>
+      </div>
+      <div class="theme-card" onclick="selectTheme(this)">
+        <div class="theme-check">✓ Selected</div>
+        <div class="theme-preview" style="background:linear-gradient(135deg,#f5a623 0%,#e94560 100%);"></div>
+        <h4>Editorial</h4>
+        <p>Magazine-style layout with rich media support</p>
+      </div>
+      <div class="theme-card" onclick="selectTheme(this)">
+        <div class="theme-check">✓ Selected</div>
+        <div class="theme-preview" style="background:linear-gradient(135deg,#3ecf8e 0%,#0f0f13 100%);"></div>
+        <h4>Bold</h4>
+        <p>High-contrast, image-heavy with strong CTAs</p>
+      </div>
+      <div class="theme-card" onclick="selectTheme(this)">
+        <div class="theme-check">✓ Selected</div>
+        <div class="theme-preview" style="background:linear-gradient(135deg,#60a5fa 0%,#7c6dfa 100%);"></div>
+        <h4>Classic</h4>
+        <p>Traditional blog layout, content-first approach</p>
+      </div>
+    </div>
+  `;
+}
+
+function selectTheme(el){
+  document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function creationStep3(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Content Brief</h3>
+    <div class="form-group">
+      <label>RSS Aggregator</label>
+      <div class="rss-link-card" onclick="void(0)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <div>
+          <div class="rss-link-text">Open RSS Aggregator →</div>
+          <div class="rss-link-sub">Configure feeds and sources in the RSS Aggregator tool</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Target Audience</label><input type="text" placeholder="e.g. Young adults 25-40"></div>
+      <div class="form-group"><label>Tone</label><input type="text" placeholder="e.g. Informative, friendly"></div>
+    </div>
+    <div class="form-group"><label>Topics</label><input type="text" placeholder="e.g. Tech, Finance, Health"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Articles per Week</label><input type="number" value="5" min="1" max="20"></div>
+      <div class="form-group"><label>Preferred Days</label>
+        <div class="day-checks">
+          <label class="day-check"><input type="checkbox" checked> Mon</label>
+          <label class="day-check"><input type="checkbox" checked> Tue</label>
+          <label class="day-check"><input type="checkbox" checked> Wed</label>
+          <label class="day-check"><input type="checkbox" checked> Thu</label>
+          <label class="day-check"><input type="checkbox" checked> Fri</label>
+          <label class="day-check"><input type="checkbox"> Sat</label>
+          <label class="day-check"><input type="checkbox"> Sun</label>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label>Content Guidelines</label><textarea rows="3" placeholder="Any specific guidelines for AI-generated content..."></textarea></div>
+  `;
+}
+
+function creationStep4(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">AI Agent Configuration</h3>
+    <div class="form-group"><label>Model</label>
+      <select><option>Claude 3.5 Sonnet</option><option>Claude 3 Opus</option><option>Gemini 1.5 Pro</option></select>
+    </div>
+    <div class="form-group"><label>Approval Threshold</label>
+      <div class="slider-visual">
+        <div class="slider-track"><div class="slider-fill"></div></div>
+        <div class="slider-val">75/100</div>
+      </div>
+    </div>
+    <div class="form-group"><label>Scoring Criteria</label>
+      <div class="criteria-checks">
+        <label class="criteria-check"><input type="checkbox" checked> SEO Quality</label>
+        <label class="criteria-check"><input type="checkbox" checked> Tone Match</label>
+        <label class="criteria-check"><input type="checkbox" checked> Content Length</label>
+        <label class="criteria-check"><input type="checkbox" checked> Factual Accuracy</label>
+        <label class="criteria-check"><input type="checkbox" checked> Keyword Relevance</label>
+      </div>
+    </div>
+  `;
+}
+
+function creationStep5(){
+  const domain = wizardSite.domain || 'newsite.com';
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Building Site Preview</h3>
+    <div id="build-loading-area" class="build-loading">
+      <div class="build-spinner"></div>
+      <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px;">Building staging environment...</div>
+      <div style="color:#888;font-size:12px;margin-bottom:20px;">This may take a moment</div>
+      <div class="build-log" id="build-log"></div>
+    </div>
+    <div id="build-done-area" class="staging-done">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+      <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px;">Staging environment ready</div>
+      <div style="color:#888;font-size:13px;margin-bottom:16px;">Your site has been built and deployed to staging</div>
+      <a class="staging-link" href="javascript:void(0)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        https://staging.${domain}
+      </a>
+      <div class="staging-note">
+        You can leave the process here — the site is saved in <strong>Preview</strong> status. Come back anytime to continue to Go Live.
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;">
+        <button class="btn btn-ghost" onclick="saveAsPreview()">Save as Preview</button>
+        <button class="btn btn-purple" onclick="wizNext()">Continue to Go Live →</button>
+      </div>
+    </div>
+  `;
+}
+
+function startBuildAnimation(){
+  const logEl = document.getElementById('build-log');
+  if(!logEl) return;
+  const lines = [
+    '→ Initializing build environment...',
+    '→ Pulling theme assets...',
+    '→ Compiling templates...',
+    '→ Generating sitemap...',
+    '→ Optimizing images...',
+    '→ Deploying to staging CDN...',
+    '→ Running health checks...',
+    '✓ Build complete!'
+  ];
+  let i = 0;
+  const interval = setInterval(()=>{
+    if(i < lines.length){
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.style.animationDelay = '0s';
+      line.textContent = lines[i];
+      if(i === lines.length-1) line.style.color = '#3ecf8e';
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(()=>{
+        const loadingArea = document.getElementById('build-loading-area');
+        const doneArea = document.getElementById('build-done-area');
+        if(loadingArea) loadingArea.style.display = 'none';
+        if(doneArea) doneArea.classList.add('visible');
+      },600);
+    }
+  },500);
+}
+
+function saveAsPreview(){
+  wizardSite.status = 'Preview';
+  closeWizard();
+  renderDashboardTable();
+  renderSitesTable();
+}
+
+function creationStep6(){
+  const domain = wizardSite.domain || 'newsite.com';
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Ready to Go Live</h3>
+    <p style="color:#888;margin-bottom:24px;">Your site <strong style="color:#fff;">${domain}</strong> has been built and is ready to move to the next stage.</p>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:40px;">
+      <button class="btn btn-ghost" onclick="wizPrev()">← Back to edit</button>
+      <button class="btn btn-purple" style="font-size:15px;padding:12px 32px;" onclick="goLiveCreation()">🚀 Go Live</button>
+    </div>
+  `;
+}
+
+function goLiveCreation(){
+  wizardSite.status = 'Ready';
+  closeWizard();
+  renderDashboardTable();
+  renderSitesTable();
+}
+
+// ===== FLOW 3 — MONETIZATION =====
+function openMonetizationWizard(site){
+  wizardSite = site;
+  wizardType = 'monetization';
+  wizardStepNames = ['Ad Network','Ad Layouts','Tracking','Review','Confirm'];
+  wizardSteps = [monStep1,monStep2,monStep3,monStep4,monStep5];
+  wizardCurrentStep = 0;
+  openWizard();
+}
+
+function monStep1(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Ad Network Setup</h3>
+    <div class="form-group"><label>Site ID</label><input type="text" value="${wizardSite.siteId}"></div>
+    <div class="form-group"><label>Exclusivity</label>
+      <select id="mon-exclusivity" onchange="toggleObField()">
+        <option value="">None</option>
+        <option value="Taboola">Taboola</option>
+        <option value="Outbrain">Outbrain</option>
+      </select>
+    </div>
+    <div class="form-group" id="ob-epid-group" style="display:none;">
+      <label>OB epid</label><input type="text" placeholder="Enter OB epid">
+    </div>
+  `;
+}
+
+function toggleObField(){
+  const sel = document.getElementById('mon-exclusivity');
+  document.getElementById('ob-epid-group').style.display = sel&&sel.value==='Outbrain'?'block':'none';
+}
+
+function monStep2(){
+  const placements = ['Above content','In-content slot 1','In-content slot 2','Sidebar','Sticky bottom'];
+  const networks = ['Taboola','Outbrain','Google AdSense','Google Ad Manager'];
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Ad Layouts</h3>
+    <div class="network-cards">
+      ${networks.map((n,i)=>`
+        <div class="network-card ${i<2?'on':''}" id="nc-${i}">
+          <div class="network-card-header">
+            <h4>${n}</h4>
+            <div class="toggle ${i<2?'on':''}" onclick="toggleNetwork(${i})"></div>
+          </div>
+          <div class="placement-checks">
+            ${placements.map((p,j)=>`<label class="placement-check"><input type="checkbox" ${j<3?'checked':''}> ${p}</label>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function toggleNetwork(i){
+  const card = document.getElementById('nc-'+i);
+  const toggle = card.querySelector('.toggle');
+  card.classList.toggle('on');
+  toggle.classList.toggle('on');
+}
+
+function monStep3(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Tracking & Settings</h3>
+    <div class="form-group"><label>GA Info</label><input type="text" value="${wizardSite.ga}" placeholder="G-XXXXXXXXXX"></div>
+    <div style="display:flex;gap:24px;margin-top:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;">Cloudflare APO</span>
+        <div class="toggle ${wizardSite.cfApo?'on':''}" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;">Fixed Ad Insert</span>
+        <div class="toggle ${wizardSite.fixedAd?'on':''}" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+  `;
+}
+
+function monStep4(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Review Configuration</h3>
+    <div style="margin-bottom:20px;">
+      <div class="sp-row"><span class="sp-label">Site</span><span class="sp-val">${wizardSite.domain}</span></div>
+      <div class="sp-row"><span class="sp-label">Site ID</span><span class="sp-val">${wizardSite.siteId}</span></div>
+      <div class="sp-row"><span class="sp-label">Networks</span><span class="sp-val">Taboola, Outbrain</span></div>
+      <div class="sp-row"><span class="sp-label">Placements</span><span class="sp-val">Above content, In-content 1 & 2</span></div>
+    </div>
+    <div class="form-group"><label>Auto-generated ads.txt</label></div>
+    <div class="code-block">google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
+taboola.com, 1234567, DIRECT
+outbrain.com, 00987654321, DIRECT
+openx.com, 557653412, RESELLER, 6a698e2ec38604c6</div>
+  `;
+}
+
+function monStep5(){
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Monetization Complete</h3>
+    <div style="text-align:center;margin:30px 0;">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+    </div>
+    <ul class="confirm-list">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Taboola + Outbrain activated</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> ads.txt deployed</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Cloudflare rebuild triggered</li>
+    </ul>
+    <div style="text-align:center;margin-top:30px;">
+      <button class="btn btn-green" style="font-size:15px;padding:12px 40px;" onclick="completeMon()">Done</button>
+    </div>
+  `;
+}
+
+function completeMon(){
+  wizardSite.status = 'Live';
+  closeWizard();
+  renderDashboardTable();
+  renderSitesTable();
+  showScreen('sites');
+}
+
+// ===== FILTERS =====
+document.getElementById('search-input').addEventListener('input',renderSitesTable);
+document.getElementById('filter-company').addEventListener('change',renderSitesTable);
+document.getElementById('filter-vertical').addEventListener('change',renderSitesTable);
+document.getElementById('filter-status').addEventListener('change',renderSitesTable);
+
+// ===== INIT =====
+renderDashboardTable();
+renderSitesTable();
+renderDashReview();
+renderReviewCards();
+</script>
+</body>
+</html>
