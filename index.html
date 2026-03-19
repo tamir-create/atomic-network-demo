@@ -82,8 +82,9 @@ textarea{resize:vertical;}
 .sync-btn.spinning svg{animation:spin 1s linear infinite;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-/* Two column layout */
+/* Column layouts */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:28px;}
 .col-card{background:#18181f;border:1px solid #2a2a35;border-radius:10px;padding:20px;}
 .col-card h3{font-size:14px;font-weight:600;color:#fff;margin-bottom:14px;}
 
@@ -93,10 +94,18 @@ textarea{resize:vertical;}
 .review-item .ri-title{font-weight:500;color:#fff;margin-bottom:4px;}
 .review-item .ri-meta{font-size:11px;color:#888;}
 
-/* Activity */
-.activity-item{padding:10px 0;border-bottom:1px solid #1e1e28;font-size:12px;}
-.activity-item:last-child{border-bottom:none;}
+/* Activity & Monetization List */
+.activity-item, .mon-dash-item{padding:10px 0;border-bottom:1px solid #1e1e28;font-size:12px;}
+.activity-item:last-child, .mon-dash-item:last-child{border-bottom:none;}
 .activity-item .time{color:#888;font-size:11px;margin-top:2px;}
+.mon-dash-item{display:flex;justify-content:space-between;align-items:center;}
+.mon-dash-domain{font-weight:500;color:#fff;}
+.partner-dots{display:flex;gap:6px;}
+.p-dot{width:8px;height:8px;border-radius:50%;cursor:help;position:relative;}
+.p-dot.active{background:#3ecf8e;box-shadow:0 0 4px #3ecf8e;}
+.p-dot.pending{background:#f5a623;}
+.p-dot.error{background:#e94560;box-shadow:0 0 4px #e94560;}
+.p-dot:hover::after{content:attr(title);position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:#2a2a35;color:#fff;padding:4px 8px;border-radius:4px;font-size:10px;white-space:nowrap;z-index:10;}
 
 /* Review Queue Screen */
 .review-card{background:#18181f;border:1px solid #2a2a35;border-radius:10px;padding:24px;margin-bottom:16px;transition:all .3s;}
@@ -329,7 +338,11 @@ textarea{resize:vertical;}
       <tbody id="dashboard-tbody"></tbody>
     </table>
 
-    <div class="two-col">
+    <div class="three-col">
+      <div class="col-card">
+        <h3>Monetization Status</h3>
+        <div id="dash-mon-list"></div>
+      </div>
       <div class="col-card">
         <h3>Review Queue</h3>
         <div id="dash-review-list"></div>
@@ -486,6 +499,19 @@ const sites = [
   {domain:"decoratingnerds.com",company:"ATL",vertical:"Lifestyle",status:"Live",siteId:"1952252140",exclusivity:"",obEpid:"",ga:"G-R34WBLSQXE",updated:"2 days ago",cfApo:false,fixedAd:false},
 ];
 
+// Initialize partners array for all sites based on existing exclusivity
+sites.forEach(s => {
+  s.partners = [];
+  if (s.exclusivity === 'Taboola') s.partners.push({network: 'Taboola', status: 'active', pubId: 'tb-123', apiKey: 'tb-key'});
+  if (s.exclusivity === 'OB-NGC' || s.exclusivity === 'OB-ATL') s.partners.push({network: 'Outbrain', status: 'active', pubId: 'ob-'+s.obEpid, apiKey: 'ob-key'});
+  // Simulate some pending/error ones for preview
+  if (s.domain === 'useminds.com') s.partners.push({network: 'AdSense', status: 'pending', pubId: 'pub-999', apiKey: 'pending-key'});
+  if (s.domain === 'travelnights.com') s.partners.push({network: 'Taboola', status: 'error', pubId: 'tb-000', apiKey: 'invalid'});
+  
+  // Also initialize placement config array
+  s.placements = ['Above content', 'In-content slot 1', 'In-content slot 2'];
+});
+
 // New domains that sync adds
 const syncDomains_pool = [
   {domain:"freshbytesdaily.com",company:"",vertical:"Food & Drink",status:"New",siteId:"1949520001",exclusivity:"",obEpid:"",ga:"",updated:"just now",cfApo:false,fixedAd:false},
@@ -537,6 +563,15 @@ function syncDomains(){
 // ===== RENDER TABLES =====
 function renderDashboardTable(){
   document.getElementById('dashboard-tbody').innerHTML = sites.slice(0,5).map(s=>renderSiteRow(s,true)).join('');
+}
+
+function renderDashMonetization(){
+  // show sites with partners
+  const monSites = sites.filter(s => s.partners && s.partners.length > 0).slice(0, 5);
+  document.getElementById('dash-mon-list').innerHTML = monSites.map(s => {
+    const dots = s.partners.map(p => `<div class="p-dot ${p.status}" title="${p.network}: ${p.status}"></div>`).join('');
+    return `<div class="mon-dash-item"><div class="mon-dash-domain">${s.domain}</div><div class="partner-dots">${dots}</div></div>`;
+  }).join('');
 }
 
 function renderSitesTable(){
@@ -995,47 +1030,133 @@ function openMonetizationWizard(site){
   openWizard();
 }
 
+let pendingPartner = { network: 'Taboola', pubId: '', apiKey: '', status: '' };
+
 function monStep1(){
+  const partnersHtml = (wizardSite.partners || []).map((p, idx) => `
+    <div style="background:#1e1e28; border:1px solid #2a2a35; padding:12px; border-radius:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:600; color:#fff; font-size:13px;">${p.network}</div>
+        <div style="font-size:11px; color:#888;">Pub ID: ${p.pubId}</div>
+      </div>
+      <div>
+        ${p.status === 'active' 
+          ? '<span style="color:#3ecf8e; font-weight:500; font-size:12px;">✓ Connected</span>' 
+          : (p.status === 'error' ? '<span style="color:#e94560; font-weight:500; font-size:12px;">✗ Error</span>' : '<span style="color:#f5a623; font-weight:500; font-size:12px;">Pending</span>')}
+        <button class="btn btn-ghost btn-sm" style="margin-left:12px; padding:4px 8px;" onclick="removePartner(${idx})">Remove</button>
+      </div>
+    </div>
+  `).join('');
+
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Ad Network Setup</h3>
-    <div class="form-group"><label>Site ID</label><input type="text" value="${wizardSite.siteId}"></div>
-    <div class="form-group"><label>Exclusivity</label>
-      <select id="mon-exclusivity" onchange="toggleObField()">
-        <option value="">None</option>
-        <option value="Taboola">Taboola</option>
-        <option value="Outbrain">Outbrain</option>
-      </select>
+    <div style="margin-bottom:24px;">
+      <h4 style="font-size:12px; color:#888; text-transform:uppercase; margin-bottom:12px;">Active Partners</h4>
+      ${partnersHtml || '<div style="color:#888; font-size:12px; font-style:italic;">No partners configured yet.</div>'}
     </div>
-    <div class="form-group" id="ob-epid-group" style="display:none;">
-      <label>OB epid</label><input type="text" placeholder="Enter OB epid">
+    <div style="background:#18181f; border:1px dashed #2a2a35; padding:20px; border-radius:8px;">
+      <h4 style="font-size:13px; color:#fff; margin-bottom:16px;">Add New Partner</h4>
+      <div class="form-group">
+        <label>Network</label>
+        <select id="new-p-network" onchange="pendingPartner.network=this.value">
+          <option value="Taboola" ${pendingPartner.network==='Taboola'?'selected':''}>Taboola</option>
+          <option value="Outbrain" ${pendingPartner.network==='Outbrain'?'selected':''}>Outbrain</option>
+          <option value="AdSense" ${pendingPartner.network==='AdSense'?'selected':''}>Google AdSense</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Publisher ID</label>
+          <input type="text" id="new-p-pub" oninput="pendingPartner.pubId=this.value" value="${pendingPartner.pubId}" placeholder="Enter Pub ID">
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="new-p-api" oninput="pendingPartner.apiKey=this.value" value="${pendingPartner.apiKey}" placeholder="Enter API Key">
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+        <div id="validation-msg" style="font-size:12px; font-weight:500;">
+          ${pendingPartner.status === 'error' ? '<span style="color:#e94560;">Invalid API Key or connection failed.</span>' : ''}
+          ${pendingPartner.status === 'active' ? '<span style="color:#3ecf8e;">Connection successful!</span>' : ''}
+          ${pendingPartner.status === 'validating' ? '<span style="color:#888;">Validating...</span>' : ''}
+        </div>
+        <button class="btn btn-ghost" onclick="validateAndAddPartner()">Validate & Add</button>
+      </div>
     </div>
   `;
 }
 
-function toggleObField(){
-  const sel = document.getElementById('mon-exclusivity');
-  document.getElementById('ob-epid-group').style.display = sel&&sel.value==='Outbrain'?'block':'none';
+function removePartner(idx) {
+  wizardSite.partners.splice(idx, 1);
+  renderWizard();
+}
+
+function validateAndAddPartner() {
+  const p = {...pendingPartner};
+  if (!p.pubId || !p.apiKey) {
+    alert("Please fill in both Publisher ID and API Key.");
+    return;
+  }
+  
+  pendingPartner.status = 'validating';
+  renderWizard();
+  
+  setTimeout(() => {
+    if (p.apiKey.toLowerCase().includes('invalid') || p.apiKey.toLowerCase().includes('error')) {
+      pendingPartner.status = 'error';
+    } else {
+      pendingPartner.status = 'active';
+      if(!wizardSite.partners) wizardSite.partners = [];
+      wizardSite.partners.push({
+        network: p.network,
+        pubId: p.pubId,
+        apiKey: p.apiKey,
+        status: 'active'
+      });
+      pendingPartner = { network: 'Taboola', pubId: '', apiKey: '', status: '' }; // reset
+    }
+    renderWizard();
+  }, 600);
 }
 
 function monStep2(){
-  const placements = ['Above content','In-content slot 1','In-content slot 2','Sidebar','Sticky bottom'];
-  const networks = ['Taboola','Outbrain','Google AdSense','Google Ad Manager'];
+  const placements = ['Header', 'In-content', 'Sidebar', 'Footer', 'Exit-intent'];
+  const networks = (wizardSite.partners || []).map(p => p.network); 
+  
+  if(networks.length === 0) {
+    return `
+      <h3 style="color:#fff;margin-bottom:20px;">Ad Layouts</h3>
+      <p style="color:#888;">Please add at least one partner in the previous step.</p>
+    `;
+  }
+
+  const uniqueNetworks = [...new Set(networks)];
+  
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Ad Layouts</h3>
     <div class="network-cards">
-      ${networks.map((n,i)=>`
-        <div class="network-card ${i<2?'on':''}" id="nc-${i}">
+      ${uniqueNetworks.map((n,i)=>`
+        <div class="network-card on" id="nc-${i}">
           <div class="network-card-header">
             <h4>${n}</h4>
-            <div class="toggle ${i<2?'on':''}" onclick="toggleNetwork(${i})"></div>
+            <div class="toggle on" onclick="toggleNetwork(${i})"></div>
           </div>
-          <div class="placement-checks">
-            ${placements.map((p,j)=>`<label class="placement-check"><input type="checkbox" ${j<3?'checked':''}> ${p}</label>`).join('')}
+          <div class="placement-checks" style="display:flex;">
+            ${placements.map((p,j)=>{
+              const isChecked = wizardSite.placements ? wizardSite.placements.includes(p) : (j<2);
+              return `<label class="placement-check"><input type="checkbox" ${isChecked?'checked':''} onchange="togglePlacement('${p}', this.checked)"> ${p}</label>`;
+            }).join('')}
           </div>
         </div>
       `).join('')}
     </div>
   `;
+}
+
+function togglePlacement(p, checked) {
+  if (!wizardSite.placements) wizardSite.placements = [];
+  if (checked && !wizardSite.placements.includes(p)) wizardSite.placements.push(p);
+  if (!checked) wizardSite.placements = wizardSite.placements.filter(x => x !== p);
 }
 
 function toggleNetwork(i){
@@ -1063,32 +1184,42 @@ function monStep3(){
 }
 
 function monStep4(){
+  const networkNames = [...new Set((wizardSite.partners || []).map(p => p.network))].join(', ');
+  const placementsNames = (wizardSite.placements || []).join(', ');
+  
+  let adsTxtLines = [];
+  (wizardSite.partners || []).forEach(p => {
+    if(p.status !== 'active') return;
+    if (p.network === 'Taboola') adsTxtLines.push(`taboola.com, ${p.pubId}, DIRECT`);
+    if (p.network === 'Outbrain') adsTxtLines.push(`outbrain.com, ${p.pubId}, DIRECT`);
+    if (p.network === 'AdSense') adsTxtLines.push(`google.com, ${p.pubId}, DIRECT, f08c47fec0942fa0`);
+  });
+  const adsTxt = adsTxtLines.join('\\n');
+
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Review Configuration</h3>
     <div style="margin-bottom:20px;">
       <div class="sp-row"><span class="sp-label">Site</span><span class="sp-val">${wizardSite.domain}</span></div>
       <div class="sp-row"><span class="sp-label">Site ID</span><span class="sp-val">${wizardSite.siteId}</span></div>
-      <div class="sp-row"><span class="sp-label">Networks</span><span class="sp-val">Taboola, Outbrain</span></div>
-      <div class="sp-row"><span class="sp-label">Placements</span><span class="sp-val">Above content, In-content 1 & 2</span></div>
+      <div class="sp-row"><span class="sp-label">Networks</span><span class="sp-val">${networkNames || 'None'}</span></div>
+      <div class="sp-row"><span class="sp-label">Placements</span><span class="sp-val">${placementsNames || 'None'}</span></div>
     </div>
     <div class="form-group"><label>Auto-generated ads.txt</label></div>
-    <div class="code-block">google.com, pub-1234567890, DIRECT, f08c47fec0942fa0
-taboola.com, 1234567, DIRECT
-outbrain.com, 00987654321, DIRECT
-openx.com, 557653412, RESELLER, 6a698e2ec38604c6</div>
+    <div class="code-block">${adsTxt || 'No active partners configured. Ads.txt empty.'}</div>
   `;
 }
 
 function monStep5(){
+  const networkNames = [...new Set((wizardSite.partners || []).filter(p=>p.status==='active').map(p => p.network))].join(' + ');
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Monetization Complete</h3>
     <div style="text-align:center;margin:30px 0;">
       <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
     </div>
     <ul class="confirm-list">
-      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Taboola + Outbrain activated</li>
-      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> ads.txt deployed</li>
-      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Cloudflare rebuild triggered</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> ${networkNames || 'Partners'} activated</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> ads.txt deployed successfully</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Ad units rendering within 5 mins</li>
     </ul>
     <div style="text-align:center;margin-top:30px;">
       <button class="btn btn-green" style="font-size:15px;padding:12px 40px;" onclick="completeMon()">Done</button>
@@ -1097,11 +1228,26 @@ function monStep5(){
 }
 
 function completeMon(){
-  wizardSite.status = 'Live';
+  wizardSite.status = 'Live'; // Site entity status transitions to Live automatically
   closeWizard();
+  
+  // Update UI and navigate to dashboard
   renderDashboardTable();
+  renderDashMonetization();
   renderSitesTable();
-  showScreen('sites');
+  showScreen('dashboard');
+  
+  // Emit simulated revenue events
+  if (wizardSite.partners) {
+    wizardSite.partners.forEach(p => {
+      if(p.status === 'active') {
+        const placements = wizardSite.placements || ['Header'];
+        placements.forEach(zone => {
+          console.log(`[DataLayer] Emitting event: {"event": "ad_impression", "siteId": "${wizardSite.siteId}", "domain": "${wizardSite.domain}", "partner": "${p.network}", "placementZone": "${zone}", "timestamp": "${new Date().toISOString()}"}`);
+        });
+      }
+    });
+  }
 }
 
 // ===== FILTERS =====
@@ -1112,6 +1258,7 @@ document.getElementById('filter-status').addEventListener('change',renderSitesTa
 
 // ===== INIT =====
 renderDashboardTable();
+renderDashMonetization();
 renderSitesTable();
 renderDashReview();
 renderReviewCards();
