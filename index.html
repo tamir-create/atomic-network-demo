@@ -133,6 +133,7 @@ textarea{resize:vertical;}
 .btn-red:hover{background:rgba(233,69,96,.25);}
 .btn-purple{background:#7c6dfa;color:#fff;}
 .btn-purple:hover{background:#6b5ce6;}
+.btn:disabled{background:#2a2a35!important;color:#555!important;cursor:not-allowed!important;border-color:transparent!important;}
 .btn-sm{padding:5px 12px;font-size:12px;}
 
 /* Side Panel */
@@ -251,14 +252,17 @@ textarea{resize:vertical;}
 .detail-tab-content{display:none;}
 .detail-tab-content.active{display:block;}
 
-/* AI Agent tab */
-.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.agent-card{background:#1e1e28;border:1px solid #2a2a35;border-radius:10px;padding:20px;}
-.agent-card h4{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
-.agent-stat{font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;}
-.agent-sub{font-size:12px;color:#888;}
-.scoring-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-.scoring-tag{padding:4px 10px;background:rgba(124,109,250,.1);color:#7c6dfa;border-radius:4px;font-size:11px;}
+/* Site identity tab */
+.identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.identity-card{background:#1e1e28;border:1px solid #2a2a35;border-radius:10px;padding:16px;}
+.identity-card.full{grid-column:span 2;}
+.identity-card.transparent{background:transparent;border-color:transparent;padding:0 0 4px;}
+.identity-card h4{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.identity-checks{display:flex;flex-wrap:wrap;gap:10px;}
+.identity-check{display:flex;align-items:center;gap:4px;font-size:12px;color:#e0e0e0;}
+.identity-check input{accent-color:#7c6dfa;}
+.identity-val{font-size:13px;color:#e0e0e0;padding:2px 0;min-height:20px;}
+.identity-check input:disabled{opacity:.4;cursor:default;}
 
 /* Monetization tab */
 .mon-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -406,7 +410,7 @@ textarea{resize:vertical;}
     </div>
     <div class="detail-tabs">
       <div class="detail-tab active" data-tab="content">Content</div>
-      <div class="detail-tab" data-tab="agent">AI Agent</div>
+      <div class="detail-tab" data-tab="agent">Site Identity</div>
       <div class="detail-tab" data-tab="monetization">Monetization</div>
     </div>
 
@@ -425,46 +429,9 @@ textarea{resize:vertical;}
       </table>
     </div>
 
-    <!-- AI Agent Tab -->
+    <!-- Site Identity Tab -->
     <div class="detail-tab-content" id="tab-agent">
-      <div class="agent-grid">
-        <div class="agent-card">
-          <h4>Status</h4>
-          <div class="agent-stat"><span class="badge badge-running">● Running</span></div>
-          <div class="agent-sub" style="margin-top:8px;">Model: Claude 3.5 Sonnet</div>
-        </div>
-        <div class="agent-card">
-          <h4>RSS Feed</h4>
-          <div style="font-size:13px;color:#7c6dfa;word-break:break-all;">https://rss.muvizz-source.com/feed</div>
-        </div>
-        <div class="agent-card" style="grid-column:span 2;">
-          <h4>Approval Threshold</h4>
-          <div class="slider-visual">
-            <div class="slider-track"><div class="slider-fill"></div></div>
-            <div class="slider-val">75/100</div>
-          </div>
-        </div>
-        <div class="agent-card" style="grid-column:span 2;">
-          <h4>Scoring Criteria</h4>
-          <div class="scoring-tags">
-            <span class="scoring-tag">SEO Quality</span>
-            <span class="scoring-tag">Tone Match</span>
-            <span class="scoring-tag">Content Length</span>
-            <span class="scoring-tag">Factual Accuracy</span>
-            <span class="scoring-tag">Keyword Relevance</span>
-          </div>
-        </div>
-        <div class="agent-card">
-          <h4>This Week</h4>
-          <div class="agent-stat">3 <span style="font-size:13px;font-weight:400;color:#888;">generated</span></div>
-          <div class="agent-sub">2 auto-published · 1 flagged</div>
-        </div>
-        <div class="agent-card">
-          <h4>Schedule</h4>
-          <div class="agent-sub">Last run: <strong style="color:#fff;">2h ago</strong></div>
-          <div class="agent-sub" style="margin-top:4px;">Next run: <strong style="color:#fff;">in 4h</strong></div>
-        </div>
-      </div>
+      <div class="identity-grid" id="detail-identity-grid"></div>
     </div>
 
     <!-- Monetization Tab -->
@@ -499,18 +466,55 @@ const sites = [
   {domain:"decoratingnerds.com",company:"ATL",vertical:"Lifestyle",status:"Live",siteId:"1952252140",exclusivity:"",obEpid:"",ga:"G-R34WBLSQXE",updated:"2 days ago",cfApo:false,fixedAd:false},
 ];
 
-// Initialize partners array for all sites based on existing exclusivity
-sites.forEach(s => {
-  s.partners = [];
-  if (s.exclusivity === 'Taboola') s.partners.push({network: 'Taboola', status: 'active', pubId: 'tb-123', apiKey: 'tb-key'});
-  if (s.exclusivity === 'OB-NGC' || s.exclusivity === 'OB-ATL') s.partners.push({network: 'Outbrain', status: 'active', pubId: 'ob-'+s.obEpid, apiKey: 'ob-key'});
-  // Simulate some pending/error ones for preview
-  if (s.domain === 'useminds.com') s.partners.push({network: 'AdSense', status: 'pending', pubId: 'pub-999', apiKey: 'pending-key'});
-  if (s.domain === 'travelnights.com') s.partners.push({network: 'Taboola', status: 'error', pubId: 'tb-000', apiKey: 'invalid'});
-  
-  // Also initialize placement config array
-  s.placements = ['Above content', 'In-content slot 1', 'In-content slot 2'];
-});
+const dayOptions = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const verticalOptions = ['Lifestyle','Travel','Animals','Science','Entertainment','Conspiracy','Other','News','Food & Drink'];
+const modelOptions = ['Claude 3.5 Sonnet','Claude 3 Opus','Gemini 1.5 Pro'];
+const scoringOptions = ['SEO Quality','Tone Match','Content Length','Factual Accuracy','Keyword Relevance'];
+
+function toTitleCase(text){
+  return text
+    .replace(/[-_]/g,' ')
+    .split(' ')
+    .filter(Boolean)
+    .map(w=>w.charAt(0).toUpperCase()+w.slice(1))
+    .join(' ');
+}
+
+function getDefaultSiteName(domain){
+  if(!domain) return '';
+  return toTitleCase(domain.split('.')[0]);
+}
+
+function initSiteData(site){
+  if(!site.partners){
+    site.partners = [];
+    if (site.exclusivity === 'Taboola') site.partners.push({network: 'Taboola', status: 'active', pubId: 'tb-123', apiKey: 'tb-key'});
+    if (site.exclusivity === 'OB-NGC' || site.exclusivity === 'OB-ATL') site.partners.push({network: 'Outbrain', status: 'active', pubId: 'ob-'+site.obEpid, apiKey: 'ob-key'});
+    if (site.domain === 'useminds.com') site.partners.push({network: 'AdSense', status: 'pending', pubId: 'pub-999', apiKey: 'pending-key'});
+    if (site.domain === 'travelnights.com') site.partners.push({network: 'Taboola', status: 'error', pubId: 'tb-000', apiKey: 'invalid'});
+  }
+  if(!site.placements) site.placements = ['Above content', 'In-content slot 1', 'In-content slot 2'];
+
+  if(site.siteName === undefined) site.siteName = getDefaultSiteName(site.domain);
+  if(site.tagline === undefined) site.tagline = '';
+  if(site.audience === undefined) site.audience = '';
+  if(site.theme === undefined) site.theme = 'Modern';
+  if(site.rssFeed === undefined) site.rssFeed = site.domain ? `https://rss.${site.domain.replace('.com','')}-source.com/feed` : '';
+  if(site.targetAudience === undefined) site.targetAudience = '';
+  if(site.tone === undefined) site.tone = '';
+  if(site.topics === undefined) site.topics = '';
+  if(site.articlesPerWeek === undefined) site.articlesPerWeek = 5;
+  if(!Array.isArray(site.preferredDays)) site.preferredDays = ['Mon','Tue','Wed','Thu','Fri'];
+  if(site.contentGuidelines === undefined) site.contentGuidelines = '';
+  if(site.aiModel === undefined) site.aiModel = 'Claude 3.5 Sonnet';
+  if(site.approvalThreshold === undefined) site.approvalThreshold = 75;
+  if(!Array.isArray(site.scoringCriteria)) site.scoringCriteria = [...scoringOptions];
+  if(!Array.isArray(site.navTabs)) site.navTabs = ['Home','Latest','About','Contact'];
+  if(site.logoName === undefined) site.logoName = 'Default logo';
+  if(site.logoDataUrl === undefined) site.logoDataUrl = '';
+}
+
+sites.forEach(initSiteData);
 
 // New domains that sync adds
 const syncDomains_pool = [
@@ -551,6 +555,7 @@ function syncDomains(){
       const newDomain = syncDomains_pool[syncIndex];
       // Check not already added
       if(!sites.find(s=>s.domain===newDomain.domain)){
+        initSiteData(newDomain);
         sites.push(newDomain);
       }
       syncIndex++;
@@ -650,7 +655,7 @@ document.addEventListener('click',function(e){
   if(site.status==='New'){
     openCreationWizard(site);
   } else if(site.status==='Preview'){
-    openCreationWizard(site, 4); // jump to staging step
+    openCreationWizard(site, 3); // jump to preview step
   } else if(site.status==='Ready'){
     openSidePanel(site);
   } else if(site.status==='Live'){
@@ -691,8 +696,9 @@ document.getElementById('sp-close').addEventListener('click',closeSidePanel);
 
 // ===== SITE DETAIL (Live sites) =====
 function openSiteDetail(site){
+  initSiteData(site);
   showScreen('detail');
-  document.getElementById('detail-name').textContent = site.domain.replace('.com','').replace('.','');
+  document.getElementById('detail-name').textContent = site.siteName || site.domain.replace('.com','').replace('.','');
   document.getElementById('detail-domain').textContent = site.domain;
   document.getElementById('detail-badge').innerHTML = `<span class="badge badge-live">Live</span>`;
   document.getElementById('detail-company').textContent = site.company;
@@ -715,8 +721,146 @@ function openSiteDetail(site){
     <div class="mon-item"><div class="mon-label">Fixed Ad Insert</div><div class="mon-val">${site.fixedAd?'Enabled':'Disabled'}</div></div>
   `;
 
+  identityEditMode = false;
+  window._identitySnapshot = null;
+  renderDetailSiteIdentity(site);
   window._detailSite = site;
 }
+
+function identitySelectOptions(options,current){
+  return options.map(opt=>`<option value="${opt}" ${opt===current?'selected':''}>${opt}</option>`).join('');
+}
+
+function renderDetailSiteIdentity(site){
+  const isEdit = identityEditMode;
+
+  const dayChecks = dayOptions.map(day=>`
+    <label class="identity-check">
+      <input type="checkbox" ${site.preferredDays.includes(day)?'checked':''} ${!isEdit?'disabled':''}
+        ${isEdit?`onchange="toggleSiteIdentityArray('preferredDays','${day}',this.checked)"`:''}> ${day}
+    </label>
+  `).join('');
+
+  const ro = (val) => `<div class="identity-val">${val||'<span style="color:#555;">—</span>'}</div>`;
+
+  const actionBar = isEdit
+    ? `<div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="cancelIdentityEdit()">Cancel</button>
+        <button class="btn btn-purple btn-sm" onclick="deployIdentityChanges()">Deploy Changes</button>
+       </div>`
+    : `<button class="btn btn-ghost btn-sm" onclick="startIdentityEdit()">Edit</button>`;
+
+  document.getElementById('detail-identity-grid').innerHTML = `
+    <div class="identity-card full transparent">
+      <div style="display:flex;justify-content:flex-end;">${actionBar}</div>
+    </div>
+    <div class="identity-card">
+      <h4>Domain</h4>
+      ${isEdit ? `<input type="text" value="${site.domain}" disabled>` : ro(site.domain)}
+    </div>
+    <div class="identity-card">
+      <h4>Site Name</h4>
+      ${isEdit ? `<input type="text" value="${site.siteName||''}" oninput="updateSiteIdentityField('siteName',this.value)">` : ro(site.siteName)}
+    </div>
+    <div class="identity-card">
+      <h4>Tagline</h4>
+      ${isEdit ? `<input type="text" value="${site.tagline||''}" oninput="updateSiteIdentityField('tagline',this.value)">` : ro(site.tagline)}
+    </div>
+    <div class="identity-card">
+      <h4>Theme</h4>
+      ${isEdit ? `<select onchange="updateSiteIdentityField('theme',this.value)">${identitySelectOptions(['Modern','Editorial','Bold','Classic'],site.theme)}</select>` : ro(site.theme)}
+    </div>
+    <div class="identity-card">
+      <h4>Company</h4>
+      ${isEdit ? `<select onchange="updateSiteIdentityField('company',this.value)"><option value="" ${!site.company?'selected':''}>Select...</option><option value="ATL" ${site.company==='ATL'?'selected':''}>ATL</option><option value="NGC" ${site.company==='NGC'?'selected':''}>NGC</option></select>` : ro(site.company)}
+    </div>
+    <div class="identity-card">
+      <h4>Vertical</h4>
+      ${isEdit ? `<select onchange="updateSiteIdentityField('vertical',this.value)">${identitySelectOptions(verticalOptions,site.vertical||'Other')}</select>` : ro(site.vertical)}
+    </div>
+    <div class="identity-card full">
+      <h4>Audience</h4>
+      ${isEdit ? `<textarea rows="2" oninput="updateSiteIdentityField('audience',this.value)">${site.audience||''}</textarea>` : ro(site.audience)}
+    </div>
+    <div class="identity-card">
+      <h4>Target Audience</h4>
+      ${isEdit ? `<input type="text" value="${site.targetAudience||''}" oninput="updateSiteIdentityField('targetAudience',this.value)">` : ro(site.targetAudience)}
+    </div>
+    <div class="identity-card">
+      <h4>Tone</h4>
+      ${isEdit ? `<input type="text" value="${site.tone||''}" oninput="updateSiteIdentityField('tone',this.value)">` : ro(site.tone)}
+    </div>
+    <div class="identity-card">
+      <h4>Topics</h4>
+      ${isEdit ? `<input type="text" value="${site.topics||''}" oninput="updateSiteIdentityField('topics',this.value)">` : ro(site.topics)}
+    </div>
+    <div class="identity-card">
+      <h4>Articles per Week</h4>
+      ${isEdit ? `<input type="number" min="1" max="20" value="${site.articlesPerWeek}" oninput="updateSiteIdentityField('articlesPerWeek',this.value)">` : ro(site.articlesPerWeek)}
+    </div>
+    <div class="identity-card full">
+      <h4>Preferred Days</h4>
+      ${isEdit ? `<div class="identity-checks">${dayChecks}</div>` : ro((site.preferredDays||[]).join(', '))}
+    </div>
+    <div class="identity-card full">
+      <h4>Content Guidelines</h4>
+      ${isEdit ? `<textarea rows="3" oninput="updateSiteIdentityField('contentGuidelines',this.value)">${site.contentGuidelines||''}</textarea>` : ro(site.contentGuidelines)}
+    </div>
+  `;
+}
+
+function startIdentityEdit(){
+  window._identitySnapshot = JSON.parse(JSON.stringify(window._detailSite));
+  identityEditMode = true;
+  renderDetailSiteIdentity(window._detailSite);
+}
+
+function cancelIdentityEdit(){
+  if(window._identitySnapshot){
+    const site = window._detailSite;
+    Object.assign(site, window._identitySnapshot);
+    window._identitySnapshot = null;
+    document.getElementById('detail-name').textContent = site.siteName || site.domain;
+    document.getElementById('detail-company').textContent = site.company || '';
+    document.getElementById('detail-vertical').textContent = site.vertical || '';
+    renderDashboardTable();
+    renderSitesTable();
+  }
+  identityEditMode = false;
+  renderDetailSiteIdentity(window._detailSite);
+}
+
+function deployIdentityChanges(){
+  window._identitySnapshot = null;
+  window._detailSite.updated = 'just now';
+  identityEditMode = false;
+  document.getElementById('detail-name').textContent = window._detailSite.siteName || window._detailSite.domain;
+  document.getElementById('detail-company').textContent = window._detailSite.company || '';
+  document.getElementById('detail-vertical').textContent = window._detailSite.vertical || '';
+  renderDashboardTable();
+  renderSitesTable();
+  renderDetailSiteIdentity(window._detailSite);
+}
+
+function updateSiteIdentityField(field,value){
+  const site = window._detailSite;
+  if(!site) return;
+  if(field==='articlesPerWeek'){
+    site[field] = Number(value) || 0;
+  } else {
+    site[field] = value;
+  }
+}
+
+function toggleSiteIdentityArray(field, value, checked){
+  const site = window._detailSite;
+  if(!site) return;
+  if(!Array.isArray(site[field])) site[field] = [];
+  if(checked && !site[field].includes(value)) site[field].push(value);
+  if(!checked) site[field] = site[field].filter(item=>item!==value);
+}
+
+let identityEditMode = false;
 
 document.getElementById('detail-back').addEventListener('click',()=>showScreen('sites'));
 document.getElementById('edit-monetization-btn').addEventListener('click',()=>{
@@ -739,6 +883,12 @@ let wizardSteps = [];
 let wizardStepNames = [];
 let wizardSite = null;
 let wizardType = '';
+let previewMode = 'preview';
+let previewBuildStarted = false;
+let previewBuildDone = false;
+let previewHasChanges = false;
+let goLiveBuildStarted = false;
+let goLiveBuildDone = false;
 
 function openWizard(){
   document.getElementById('wizard-overlay').classList.add('open');
@@ -761,8 +911,8 @@ function renderWizard(){
   const isFirst = wizardCurrentStep===0;
   const stepContent = wizardSteps[wizardCurrentStep]();
 
-  // Check if this step has custom footer (like staging or go live)
-  const hasCustomFooter = (wizardType==='creation' && (wizardCurrentStep===4 || wizardCurrentStep===5));
+  // Check if this step has custom footer (preview or go live)
+  const hasCustomFooter = (wizardType==='creation' && (wizardCurrentStep===3 || wizardCurrentStep===4));
 
   document.getElementById('wizard').innerHTML = `
     <div class="wizard-steps">${stepsHtml}</div>
@@ -775,10 +925,6 @@ function renderWizard(){
     </div>`}
   `;
 
-  // If staging step, trigger build animation
-  if(wizardType==='creation' && wizardCurrentStep===4){
-    startBuildAnimation();
-  }
 }
 
 function wizNext(){wizardCurrentStep++;renderWizard();}
@@ -786,10 +932,17 @@ function wizPrev(){wizardCurrentStep--;renderWizard();}
 
 // ===== FLOW 1 — SITE CREATION =====
 function openCreationWizard(site, startStep){
+  initSiteData(site);
   wizardSite = site;
   wizardType = 'creation';
-  wizardStepNames = ['Identity','Theme','Content Brief','AI Agent','Preview','Go Live'];
-  wizardSteps = [creationStep1,creationStep2,creationStep3,creationStep4,creationStep5,creationStep6];
+  wizardStepNames = ['Identity','Theme','Content Brief','Preview','Go Live'];
+  wizardSteps = [creationStep1,creationStep2,creationStep3,creationStep4,creationStep5];
+  previewMode = 'preview';
+  previewBuildStarted = wizardSite.status === 'Preview';
+  previewBuildDone = wizardSite.status === 'Preview';
+  previewHasChanges = false;
+  goLiveBuildStarted = false;
+  goLiveBuildDone = false;
   wizardCurrentStep = startStep || 0;
   openWizard();
 }
@@ -805,6 +958,7 @@ function getNewDomains(){
 }
 
 function creationStep1(){
+  initSiteData(wizardSite);
   const newDomains = getNewDomains();
   const domainOptions = newDomains.map(s=>`<option value="${s.domain}" ${s.domain===wizardSite.domain?'selected':''}>${s.domain}</option>`).join('');
   return `
@@ -816,45 +970,49 @@ function creationStep1(){
           ${domainOptions}
         </select>
       </div>
-      <div class="form-group"><label>Site Name</label><input type="text" placeholder="My Awesome Site"></div>
+      <div class="form-group"><label>Site Name</label><input type="text" value="${wizardSite.siteName || ''}" oninput="wizardSite.siteName=this.value" placeholder="My Awesome Site"></div>
     </div>
-    <div class="form-group"><label>Tagline</label><input type="text" placeholder="Your site's tagline"></div>
-    <div class="form-group"><label>Audience</label><textarea rows="2" placeholder="Describe your target audience (e.g. Women 25-45 interested in home decor and DIY projects)"></textarea></div>
+    <div class="form-group"><label>Audience</label><textarea rows="2" oninput="wizardSite.audience=this.value" placeholder="Describe your target audience (e.g. Women 25-45 interested in home decor and DIY projects)">${wizardSite.audience || ''}</textarea></div>
     <div class="form-row">
-      <div class="form-group"><label>Company</label><select><option value="">Select...</option><option>ATL</option><option>NGC</option></select></div>
-      <div class="form-group"><label>Vertical</label><select><option value="">Select...</option><option>Lifestyle</option><option>Travel</option><option>Animals</option><option>Science</option><option>Entertainment</option><option>Conspiracy</option><option>Other</option><option>News</option><option>Food & Drink</option></select></div>
+      <div class="form-group"><label>Company</label><select onchange="wizardSite.company=this.value"><option value="" ${!wizardSite.company?'selected':''}>Select...</option><option ${wizardSite.company==='ATL'?'selected':''}>ATL</option><option ${wizardSite.company==='NGC'?'selected':''}>NGC</option></select></div>
+      <div class="form-group"><label>Vertical</label><select onchange="wizardSite.vertical=this.value">${identitySelectOptions(verticalOptions, wizardSite.vertical || 'Other')}</select></div>
     </div>
   `;
 }
 
 function wizSelectDomain(domain){
   const site = sites.find(s=>s.domain===domain);
-  if(site) wizardSite = site;
+  if(site){
+    initSiteData(site);
+    wizardSite = site;
+    renderWizard();
+  }
 }
 
 function creationStep2(){
+  initSiteData(wizardSite);
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Choose Theme</h3>
     <div class="theme-cards">
-      <div class="theme-card selected" onclick="selectTheme(this)">
+      <div class="theme-card ${wizardSite.theme==='Modern'?'selected':''}" onclick="selectTheme(this,'Modern')">
         <div class="theme-check">✓ Selected</div>
         <div class="theme-preview" style="background:linear-gradient(135deg,#7c6dfa 0%,#3ecf8e 100%);"></div>
         <h4>Modern</h4>
         <p>Clean, minimal design with bold typography</p>
       </div>
-      <div class="theme-card" onclick="selectTheme(this)">
+      <div class="theme-card ${wizardSite.theme==='Editorial'?'selected':''}" onclick="selectTheme(this,'Editorial')">
         <div class="theme-check">✓ Selected</div>
         <div class="theme-preview" style="background:linear-gradient(135deg,#f5a623 0%,#e94560 100%);"></div>
         <h4>Editorial</h4>
         <p>Magazine-style layout with rich media support</p>
       </div>
-      <div class="theme-card" onclick="selectTheme(this)">
+      <div class="theme-card ${wizardSite.theme==='Bold'?'selected':''}" onclick="selectTheme(this,'Bold')">
         <div class="theme-check">✓ Selected</div>
         <div class="theme-preview" style="background:linear-gradient(135deg,#3ecf8e 0%,#0f0f13 100%);"></div>
         <h4>Bold</h4>
         <p>High-contrast, image-heavy with strong CTAs</p>
       </div>
-      <div class="theme-card" onclick="selectTheme(this)">
+      <div class="theme-card ${wizardSite.theme==='Classic'?'selected':''}" onclick="selectTheme(this,'Classic')">
         <div class="theme-check">✓ Selected</div>
         <div class="theme-preview" style="background:linear-gradient(135deg,#60a5fa 0%,#7c6dfa 100%);"></div>
         <h4>Classic</h4>
@@ -864,82 +1022,67 @@ function creationStep2(){
   `;
 }
 
-function selectTheme(el){
+function selectTheme(el, theme){
   document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
+  wizardSite.theme = theme;
 }
 
 function creationStep3(){
+  initSiteData(wizardSite);
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Content Brief</h3>
-    <div class="form-group">
-      <label>RSS Aggregator</label>
-      <div class="rss-link-card" onclick="void(0)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
-        <div>
-          <div class="rss-link-text">Open RSS Aggregator →</div>
-          <div class="rss-link-sub">Configure feeds and sources in the RSS Aggregator tool</div>
-        </div>
-      </div>
-    </div>
     <div class="form-row">
-      <div class="form-group"><label>Target Audience</label><input type="text" placeholder="e.g. Young adults 25-40"></div>
-      <div class="form-group"><label>Tone</label><input type="text" placeholder="e.g. Informative, friendly"></div>
+      <div class="form-group"><label>Target Audience</label><input type="text" value="${wizardSite.targetAudience || ''}" oninput="wizardSite.targetAudience=this.value" placeholder="e.g. Young adults 25-40"></div>
+      <div class="form-group"><label>Tone</label><input type="text" value="${wizardSite.tone || ''}" oninput="wizardSite.tone=this.value" placeholder="e.g. Informative, friendly"></div>
     </div>
-    <div class="form-group"><label>Topics</label><input type="text" placeholder="e.g. Tech, Finance, Health"></div>
+    <div class="form-group"><label>Topics</label><input type="text" value="${wizardSite.topics || ''}" oninput="wizardSite.topics=this.value" placeholder="e.g. Tech, Finance, Health"></div>
     <div class="form-row">
-      <div class="form-group"><label>Articles per Week</label><input type="number" value="5" min="1" max="20"></div>
+      <div class="form-group"><label>Articles per Week</label><input type="number" value="${wizardSite.articlesPerWeek}" min="1" max="20" oninput="wizardSite.articlesPerWeek=Number(this.value)||1"></div>
       <div class="form-group"><label>Preferred Days</label>
         <div class="day-checks">
-          <label class="day-check"><input type="checkbox" checked> Mon</label>
-          <label class="day-check"><input type="checkbox" checked> Tue</label>
-          <label class="day-check"><input type="checkbox" checked> Wed</label>
-          <label class="day-check"><input type="checkbox" checked> Thu</label>
-          <label class="day-check"><input type="checkbox" checked> Fri</label>
-          <label class="day-check"><input type="checkbox"> Sat</label>
-          <label class="day-check"><input type="checkbox"> Sun</label>
+          ${dayOptions.map(day=>`<label class="day-check"><input type="checkbox" ${wizardSite.preferredDays.includes(day)?'checked':''} onchange="wizToggleDay('${day}',this.checked)"> ${day}</label>`).join('')}
         </div>
       </div>
     </div>
-    <div class="form-group"><label>Content Guidelines</label><textarea rows="3" placeholder="Any specific guidelines for AI-generated content..."></textarea></div>
+    <div class="form-group"><label>Content Guidelines</label><textarea rows="3" oninput="wizardSite.contentGuidelines=this.value" placeholder="Any specific guidelines for AI-generated content...">${wizardSite.contentGuidelines || ''}</textarea></div>
   `;
+}
+
+function wizToggleDay(day, checked){
+  if(!Array.isArray(wizardSite.preferredDays)) wizardSite.preferredDays = [];
+  if(checked && !wizardSite.preferredDays.includes(day)) wizardSite.preferredDays.push(day);
+  if(!checked) wizardSite.preferredDays = wizardSite.preferredDays.filter(d=>d!==day);
 }
 
 function creationStep4(){
-  return `
-    <h3 style="color:#fff;margin-bottom:20px;">AI Agent Configuration</h3>
-    <div class="form-group"><label>Model</label>
-      <select><option>Claude 3.5 Sonnet</option><option>Claude 3 Opus</option><option>Gemini 1.5 Pro</option></select>
-    </div>
-    <div class="form-group"><label>Approval Threshold</label>
-      <div class="slider-visual">
-        <div class="slider-track"><div class="slider-fill"></div></div>
-        <div class="slider-val">75/100</div>
-      </div>
-    </div>
-    <div class="form-group"><label>Scoring Criteria</label>
-      <div class="criteria-checks">
-        <label class="criteria-check"><input type="checkbox" checked> SEO Quality</label>
-        <label class="criteria-check"><input type="checkbox" checked> Tone Match</label>
-        <label class="criteria-check"><input type="checkbox" checked> Content Length</label>
-        <label class="criteria-check"><input type="checkbox" checked> Factual Accuracy</label>
-        <label class="criteria-check"><input type="checkbox" checked> Keyword Relevance</label>
-      </div>
-    </div>
-  `;
-}
-
-function creationStep5(){
   const domain = wizardSite.domain || 'newsite.com';
+  const isPreviewTab = previewMode === 'preview';
+  const tabsHtml = (wizardSite.navTabs || []).map((tab, idx)=>`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <input type="text" value="${tab}" oninput="updateManualTab(${idx},this.value)" style="flex:1;">
+      <button class="btn btn-ghost btn-sm" onclick="removeManualTab(${idx})">Remove</button>
+    </div>
+  `).join('');
+  const logoPreview = wizardSite.logoDataUrl
+    ? `<img src="${wizardSite.logoDataUrl}" alt="logo" style="max-height:42px;border:1px solid #2a2a35;border-radius:6px;padding:4px;background:#0f0f13;">`
+    : `<div style="font-size:12px;color:#888;">${wizardSite.logoName}</div>`;
   return `
-    <h3 style="color:#fff;margin-bottom:20px;">Building Site Preview</h3>
-    <div id="build-loading-area" class="build-loading">
+    <h3 style="color:#fff;margin-bottom:20px;">Site Preview</h3>
+
+    ${isPreviewTab ? `
+    <div id="preview-idle-area" style="display:${previewBuildStarted?'none':'block'};">
+      <div style="padding:18px;border:1px solid #2a2a35;border-radius:8px;background:#1e1e28;color:#aaa;">
+        Preview is not running yet. Click <strong style="color:#fff;">Run Preview</strong> to build staging.
+      </div>
+    </div>
+    <div id="build-loading-area" class="build-loading" style="display:${previewBuildStarted && !previewBuildDone?'block':'none'};">
       <div class="build-spinner"></div>
       <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px;">Building staging environment...</div>
       <div style="color:#888;font-size:12px;margin-bottom:20px;">This may take a moment</div>
       <div class="build-log" id="build-log"></div>
     </div>
-    <div id="build-done-area" class="staging-done">
+    <div id="build-done-area" class="staging-done ${previewBuildDone?'visible':''}">
       <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
       <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px;">Staging environment ready</div>
       <div style="color:#888;font-size:13px;margin-bottom:16px;">Your site has been built and deployed to staging</div>
@@ -950,17 +1093,101 @@ function creationStep5(){
       <div class="staging-note">
         You can leave the process here — the site is saved in <strong>Preview</strong> status. Come back anytime to continue to Go Live.
       </div>
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;">
-        <button class="btn btn-ghost" onclick="saveAsPreview()">Save as Preview</button>
-        <button class="btn btn-purple" onclick="wizNext()">Continue to Go Live →</button>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
+      ${!previewBuildDone?`<button class="btn btn-purple" onclick="runPreviewBuild()" ${previewBuildStarted && !previewBuildDone?'disabled':''}>Run Preview (Staging)</button>`:''}
+      <button class="btn btn-ghost" onclick="setPreviewMode('edit')" ${!previewBuildDone?'disabled':''}>Make Edits</button>
+      ${previewBuildDone?`<button class="btn btn-ghost" onclick="saveAsPreview()">Save as Preview</button><button class="btn btn-purple" onclick="wizNext()">Continue to Go Live →</button>`:''}
+    </div>
+    ` : `
+    <div style="padding:16px;border:1px solid #2a2a35;border-radius:8px;background:#1e1e28;">
+      <h4 style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Navigation Tabs</h4>
+      ${tabsHtml || '<div style="font-size:12px;color:#888;margin-bottom:8px;">No tabs yet.</div>'}
+      <button class="btn btn-ghost btn-sm" onclick="addManualTab()">+ Add Tab</button>
+    </div>
+    <div class="form-row" style="margin-top:14px;">
+      <div class="form-group">
+        <label>Theme</label>
+        <select onchange="updateManualTheme(this.value)">${identitySelectOptions(['Modern','Editorial','Bold','Classic'], wizardSite.theme)}</select>
+      </div>
+      <div class="form-group">
+        <label>Logo</label>
+        <input type="file" accept="image/*" onchange="uploadManualLogo(this)">
       </div>
     </div>
+    <div style="margin-top:8px;">${logoPreview}</div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="setPreviewMode('preview')">Back to Preview</button>
+      <button class="btn btn-purple" id="run-preview-with-changes-btn" onclick="runPreviewBuild(true)" ${!previewHasChanges?'disabled':''}>Run Preview with Changes</button>
+    </div>
+    `}
   `;
+}
+
+function setPreviewMode(mode){
+  previewMode = mode;
+  if(mode === 'edit') previewHasChanges = false;
+  renderWizard();
+}
+
+function runPreviewBuild(force){
+  if(previewBuildStarted && !previewBuildDone && !force) return;
+  previewMode = 'preview';
+  previewBuildStarted = true;
+  previewBuildDone = false;
+  previewHasChanges = false;
+  renderWizard();
+  setTimeout(startBuildAnimation, 50);
+}
+
+function updateManualTab(index, value){
+  if(!Array.isArray(wizardSite.navTabs)) wizardSite.navTabs = [];
+  wizardSite.navTabs[index] = value;
+  markPreviewChanges();
+}
+
+function addManualTab(){
+  if(!Array.isArray(wizardSite.navTabs)) wizardSite.navTabs = [];
+  wizardSite.navTabs.push('New Tab');
+  previewHasChanges = true;
+  renderWizard();
+}
+
+function removeManualTab(index){
+  if(!Array.isArray(wizardSite.navTabs)) wizardSite.navTabs = [];
+  wizardSite.navTabs.splice(index, 1);
+  previewHasChanges = true;
+  renderWizard();
+}
+
+function updateManualTheme(value){
+  wizardSite.theme = value;
+  markPreviewChanges();
+}
+
+function uploadManualLogo(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  wizardSite.logoName = file.name;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    wizardSite.logoDataUrl = evt.target.result;
+    previewHasChanges = true;
+    renderWizard();
+  };
+  reader.readAsDataURL(file);
+}
+
+function markPreviewChanges(){
+  previewHasChanges = true;
+  const btn = document.getElementById('run-preview-with-changes-btn');
+  if(btn) btn.disabled = false;
 }
 
 function startBuildAnimation(){
   const logEl = document.getElementById('build-log');
   if(!logEl) return;
+  logEl.innerHTML = '';
   const lines = [
     '→ Initializing build environment...',
     '→ Pulling theme assets...',
@@ -989,9 +1216,47 @@ function startBuildAnimation(){
         const doneArea = document.getElementById('build-done-area');
         if(loadingArea) loadingArea.style.display = 'none';
         if(doneArea) doneArea.classList.add('visible');
+        previewBuildDone = true;
+        previewHasChanges = false;
+        renderWizard();
       },600);
     }
   },500);
+}
+
+function startGoLiveBuildAnimation(){
+  const logEl = document.getElementById('go-live-log');
+  if(!logEl) return;
+  logEl.innerHTML = '';
+  const lines = [
+    '→ Validating configuration...',
+    '→ Building production assets...',
+    '→ Configuring DNS settings...',
+    '→ Deploying to production CDN...',
+    '→ Warming up edge nodes...',
+    '→ Running final health checks...',
+    '→ Updating site status...',
+    '✓ Site is live!'
+  ];
+  let i = 0;
+  const interval = setInterval(()=>{
+    if(i < lines.length){
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.style.animationDelay = '0s';
+      line.textContent = lines[i];
+      if(i === lines.length - 1) line.style.color = '#3ecf8e';
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(()=>{
+        goLiveBuildDone = true;
+        renderWizard();
+      }, 600);
+    }
+  }, 500);
 }
 
 function saveAsPreview(){
@@ -1001,12 +1266,50 @@ function saveAsPreview(){
   renderSitesTable();
 }
 
-function creationStep6(){
+function creationStep5(){
   const domain = wizardSite.domain || 'newsite.com';
+
+  // --- Live success state ---
+  if(goLiveBuildDone){
+    return `
+      <div style="text-align:center;padding:30px 0;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" style="margin-bottom:20px;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+        <div style="color:#fff;font-size:22px;font-weight:700;margin-bottom:8px;">Your site is live!</div>
+        <div style="color:#888;font-size:14px;margin-bottom:20px;">${domain} has been deployed to production</div>
+        <a class="staging-link" href="https://${domain}" target="_blank" style="display:inline-flex;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          https://${domain}
+        </a>
+        <div style="margin-top:28px;">
+          <button class="btn btn-green" style="font-size:14px;padding:10px 32px;" onclick="finalizeGoLive()">Done</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- Building / deploying state ---
+  if(goLiveBuildStarted){
+    return `
+      <h3 style="color:#fff;margin-bottom:20px;">Deploying to Production</h3>
+      <div class="build-loading">
+        <div class="build-spinner"></div>
+        <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px;">Deploying site to production...</div>
+        <div style="color:#888;font-size:12px;margin-bottom:20px;">This may take a moment</div>
+        <div class="build-log" id="go-live-log"></div>
+      </div>
+    `;
+  }
+
+  // --- Idle / initial state ---
   return `
     <h3 style="color:#fff;margin-bottom:20px;">Ready to Go Live</h3>
-    <p style="color:#888;margin-bottom:24px;">Your site <strong style="color:#fff;">${domain}</strong> has been built and is ready to move to the next stage.</p>
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:40px;">
+    <p style="color:#888;margin-bottom:24px;">Your site <strong style="color:#fff;">${domain}</strong> has been built and is ready to deploy to production.</p>
+    <ul class="confirm-list" style="margin-bottom:30px;">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Staging preview approved</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Site identity configured</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg> Content brief saved</li>
+    </ul>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;">
       <button class="btn btn-ghost" onclick="wizPrev()">← Back to edit</button>
       <button class="btn btn-purple" style="font-size:15px;padding:12px 32px;" onclick="goLiveCreation()">🚀 Go Live</button>
     </div>
@@ -1014,7 +1317,15 @@ function creationStep6(){
 }
 
 function goLiveCreation(){
+  goLiveBuildStarted = true;
+  goLiveBuildDone = false;
+  renderWizard();
+  setTimeout(startGoLiveBuildAnimation, 50);
+}
+
+function finalizeGoLive(){
   wizardSite.status = 'Ready';
+  wizardSite.updated = 'just now';
   closeWizard();
   renderDashboardTable();
   renderSitesTable();
