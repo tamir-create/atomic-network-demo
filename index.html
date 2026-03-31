@@ -889,6 +889,10 @@ let previewBuildDone = false;
 let previewHasChanges = false;
 let goLiveBuildStarted = false;
 let goLiveBuildDone = false;
+let initialContentStep = 'idle'; // 'idle' | 'generating' | 'done'
+let initialContentCount = 10;
+let initialContentGenerated = 0;
+let initialContentRequested = 0;
 
 function openWizard(){
   document.getElementById('wizard-overlay').classList.add('open');
@@ -912,7 +916,7 @@ function renderWizard(){
   const stepContent = wizardSteps[wizardCurrentStep]();
 
   // Check if this step has custom footer (preview or go live)
-  const hasCustomFooter = (wizardType==='creation' && (wizardCurrentStep===3 || wizardCurrentStep===4));
+  const hasCustomFooter = (wizardType==='creation' && (wizardCurrentStep===3 || wizardCurrentStep===4 || wizardCurrentStep===5));
 
   document.getElementById('wizard').innerHTML = `
     <div class="wizard-steps">${stepsHtml}</div>
@@ -935,14 +939,18 @@ function openCreationWizard(site, startStep){
   initSiteData(site);
   wizardSite = site;
   wizardType = 'creation';
-  wizardStepNames = ['Identity','Theme','Content Brief','Preview','Go Live'];
-  wizardSteps = [creationStep1,creationStep2,creationStep3,creationStep4,creationStep5];
+  wizardStepNames = ['Identity','Theme','Content Brief','Preview','Add Content','Go Live'];
+  wizardSteps = [creationStep1,creationStep2,creationStep3,creationStep4,creationStep5,creationStep6];
   previewMode = 'preview';
   previewBuildStarted = wizardSite.status === 'Preview';
   previewBuildDone = wizardSite.status === 'Preview';
   previewHasChanges = false;
   goLiveBuildStarted = false;
   goLiveBuildDone = false;
+  initialContentStep = 'idle';
+  initialContentCount = 10;
+  initialContentGenerated = 0;
+  initialContentRequested = 0;
   wizardCurrentStep = startStep || 0;
   openWizard();
 }
@@ -1097,7 +1105,7 @@ function creationStep4(){
     <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
       ${!previewBuildDone?`<button class="btn btn-purple" onclick="runPreviewBuild()" ${previewBuildStarted && !previewBuildDone?'disabled':''}>Run Preview (Staging)</button>`:''}
       <button class="btn btn-ghost" onclick="setPreviewMode('edit')" ${!previewBuildDone?'disabled':''}>Make Edits</button>
-      ${previewBuildDone?`<button class="btn btn-ghost" onclick="saveAsPreview()">Save as Preview</button><button class="btn btn-purple" onclick="wizNext()">Continue to Go Live →</button>`:''}
+      ${previewBuildDone?`<button class="btn btn-ghost" onclick="saveAsPreview()">Save as Preview</button><button class="btn btn-purple" onclick="wizNext()">Continue →</button>`:''}
     </div>
     ` : `
     <div style="padding:16px;border:1px solid #2a2a35;border-radius:8px;background:#1e1e28;">
@@ -1267,6 +1275,112 @@ function saveAsPreview(){
 }
 
 function creationStep5(){
+  const domain = wizardSite.domain || 'newsite.com';
+
+  // --- Done state ---
+  if(initialContentStep === 'done'){
+    const partial = initialContentGenerated < initialContentRequested;
+    return `
+      <div style="text-align:center;padding:20px 0;">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+        <div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;">${partial?`${initialContentGenerated} of ${initialContentRequested} articles generated`:`${initialContentGenerated} articles generated`}</div>
+        ${partial?`<div style="padding:12px 16px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;color:#f5a623;font-size:12px;margin:16px 0;text-align:left;">We generated <strong>${initialContentGenerated}</strong> of the <strong>${initialContentRequested}</strong> articles you requested. More will be added automatically on your regular schedule.</div>`:''}
+        <div style="color:#888;font-size:13px;margin-bottom:8px;">All articles have passed the Quality Agent and are live on <strong style="color:#7c6dfa;">staging.${domain}</strong>.</div>
+        <div style="color:#555;font-size:11px;margin-bottom:24px;">This run is labeled <em>Initial generation</em> in your agent run history.</div>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <button class="btn btn-ghost" onclick="wizPrev()">← Back</button>
+          <button class="btn btn-purple" onclick="wizNext()">Continue to Deploy →</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- Generating state ---
+  if(initialContentStep === 'generating'){
+    return `
+      <h3 style="color:#fff;margin-bottom:20px;">Add Content to My Site</h3>
+      <div class="build-loading">
+        <div class="build-spinner"></div>
+        <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px;">Generating ${initialContentRequested} articles…</div>
+        <div style="color:#888;font-size:12px;margin-bottom:20px;">The content agent is fetching and writing articles. This may take 1–2 minutes.</div>
+        <div class="build-log" id="content-gen-log"></div>
+      </div>
+    `;
+  }
+
+  // --- Idle state ---
+  return `
+    <h3 style="color:#fff;margin-bottom:20px;">Add Content to My Site</h3>
+    <p style="color:#888;font-size:13px;margin-bottom:20px;">Generate your first batch of articles before launching. These will be ready on your site from day one.</p>
+    <div style="background:#1e1e28;border:1px solid #2a2a35;border-radius:10px;padding:24px;margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Number of Articles to Generate</label>
+        <div style="display:flex;align-items:center;gap:16px;margin-top:12px;">
+          <input type="range" min="5" max="15" value="${initialContentCount}" oninput="initialContentCount=Number(this.value);document.getElementById('content-count-display').textContent=this.value" style="flex:1;accent-color:#7c6dfa;height:6px;">
+          <div id="content-count-display" style="font-size:32px;font-weight:700;color:#fff;min-width:40px;text-align:center;">${initialContentCount}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-top:4px;"><span>5</span><span>15</span></div>
+      </div>
+    </div>
+    <div style="padding:12px 16px;background:rgba(124,109,250,.06);border:1px solid rgba(124,109,250,.15);border-radius:8px;font-size:12px;color:#aaa;margin-bottom:24px;line-height:1.6;">
+      <strong style="color:#7c6dfa;">Uses your site's existing skill file</strong> — the content agent will generate articles based on your configured vertical, audience type, tone, topics, and content guidelines. No extra setup required.
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn btn-ghost" onclick="skipInitialContent()">Skip for now</button>
+      <button class="btn btn-purple" style="font-size:14px;padding:10px 28px;" onclick="startInitialContentGeneration()">Generate Articles</button>
+    </div>
+  `;
+}
+
+function startInitialContentGeneration(){
+  initialContentRequested = initialContentCount;
+  initialContentStep = 'generating';
+  renderWizard();
+  setTimeout(startContentGenAnimation, 50);
+}
+
+function skipInitialContent(){
+  wizNext();
+}
+
+function startContentGenAnimation(){
+  const logEl = document.getElementById('content-gen-log');
+  if(!logEl) return;
+  logEl.innerHTML = '';
+  initialContentGenerated = Math.random() > 0.2 ? initialContentRequested : Math.max(5, Math.floor(initialContentRequested * 0.7));
+  const lines = [
+    '→ Loading skill file configuration...',
+    '→ Querying Content Aggregator API...',
+    `→ Found ${initialContentRequested + Math.floor(Math.random()*8)+4} candidate source articles`,
+    '→ Filtering by vertical and audience match...',
+    '→ Running content agent...',
+    `→ Drafting ${initialContentGenerated} articles...`,
+    '→ Running Quality Agent review...',
+    '→ Committing approved articles to staging...',
+    `✓ ${initialContentGenerated} articles ready on staging!`
+  ];
+  let i = 0;
+  const interval = setInterval(()=>{
+    if(i < lines.length){
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.style.animationDelay = '0s';
+      line.textContent = lines[i];
+      if(i === lines.length-1) line.style.color = '#3ecf8e';
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(()=>{
+        initialContentStep = 'done';
+        renderWizard();
+      }, 600);
+    }
+  }, 600);
+}
+
+function creationStep6(){
   const domain = wizardSite.domain || 'newsite.com';
 
   // --- Live success state ---
